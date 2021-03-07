@@ -1,6 +1,6 @@
 {
   "name": "update-cloudflare-dns",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "scripts": {
     "start": "node index.js",
     "dry": "DRY_RUN=true node index.js",
@@ -14,7 +14,9 @@
     "hjson": "3.2.2"
   },
   "devDependencies": {
+    "@auto-it/git-tag": "^10.18.3",
     "@types/cloudflare": "2.7.0",
+    "auto": "^10.18.3",
     "package-version-git-tag": "^3.0.0"
   },
   "main": "index.js",
