@@ -1,0 +1,8 @@
+{
+  "name": "update-cloudflare-dns-records-action",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:pvinis/update-cloudflare-dns-records-action.git",
+  "author": "Pavlos Vinieratos <pvinis@gmail.com>",
+  "license": "MIT"
+}
