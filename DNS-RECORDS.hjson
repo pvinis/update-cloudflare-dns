@@ -1,0 +1,90 @@
+{
+	records: [
+		## A ##
+
+		# Often represented as:
+		# mail.mydomain.com.	1	IN	A	11.22.33.44
+		# The `mail.mydomain.com.` part is the full version. We only care about everything before `.mydomain.com.`.
+		# So if we have `mail.mydomain.com.`, we would use `name: mail`.
+		# If it was just `mydomain.com.`, we can use just `name: @`. See below for example.
+		# `1` is not used in A.
+		# `IN` is not used in A.
+		# `A` is the type, of course.
+		# Last part is the IPv4 address.
+		{
+			type: A
+			name: mail
+			ipv4: 11.22.33.44
+		}
+
+		# Another example:
+		# mydomain.com.	1	IN	A	11.22.33.44
+		# The `mydomain.com.` part can be replaced with just the short alias `@`.
+		# You can also have that record be proxied on Cloudflare. The default is true.
+		{
+			type: A
+			name: @
+			ipv4: 11.22.33.44
+			proxied: false
+		}
+
+
+		## AAAA ##
+
+		# Often represented as:
+		# mail.mydomain.com.	1	IN	AAAA	684D:1111:222:3333:4444:5555:6:77
+		# The `mail.mydomain.com.` part is the full version. We only care about everything before `.mydomain.com.`.
+		# So if we have `mail.mydomain.com.`, we would use `name: mail`.
+		# If it was just `mydomain.com.`, we can use just `name: @`. See below for example.
+		# `1` is not used in A.
+		# `IN` is not used in A.
+		# `AAAA` is the type, of course.
+		# Last part is the IPv6 address.
+		{
+			type: AAAA
+			name: mail
+			ipv6: 684D:1111:222:3333:4444:5555:6:77
+		}
+
+		# Another example:
+		# mydomain.com.	1	IN	AAAA	684D:1111:222:3333:4444:5555:6:77
+		# The `mydomain.com.` part can be replaced with just the short alias `@`.
+		# You can also have that record be proxied on Cloudflare. The default is true.
+		{
+			type: AAAA
+			name: @
+			ipv6: 684D:1111:222:3333:4444:5555:6:77
+			proxied: false
+		}
+
+
+
+
+		## TXT ##
+
+		# Often represented as:
+		# _sub.mydomain.com.	1	IN	TXT	"some-key-verification=value ?huh -thats cool!"
+		# The `_sub.mydomain.com.` part is the full version. We only care about everything before `.mydomain.com.`.
+		# So if we have `_sub.mydomain.com.`, we would use `name: _sub`.
+		# If it was just `mydomain.com.`, we can use just `name: @`. See below for example.
+		# `1` is not used in TXT.
+		# `IN` is not used in TXT.
+		# `TXT` is the type, of course.
+		# Last part is the content, that we can just write even without the quotes.
+		{
+			type: TXT
+			name: _sub
+			content: some-key-verification=value ?huh -thats cool!
+		}
+
+		# Another example:
+		# mydomain.com.	1	IN	TXT	"Something else"
+		# The `mydomain.com.` part can be replaced with just the short alias `@`.
+		{
+			type: TXT
+			name: @
+			content: Something else
+		}
+
+	]
+}

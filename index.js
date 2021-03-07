@@ -1,8 +1,11 @@
-console.log("it works!")
+const core = require('@actions/core')
+const github = require('@actions/github')
+const { exit } = require('process')
 
-// const core = require('@actions/core');
-// const github = require('@actions/github');
+require('dotenv').config()
 
+
+const main = async () => {
 // try {
 //   // `who-to-greet` input defined in action metadata file
 //   const nameToGreet = core.getInput('who-to-greet');
@@ -15,3 +18,6 @@ console.log("it works!")
 // } catch (error) {
 //   core.setFailed(error.message);
 // }
+
+}
+main()
