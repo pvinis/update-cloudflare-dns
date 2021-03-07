@@ -1,11 +1,18 @@
-# update-cloudflare-dns-records-action
 
 
 
 ## Example usage
 
 ```yml
-uses: actions/update-cloudflare-dns-records-action@v1.0
+uses: pvinis/update-cloudflare-dns@v1.0
 with:
   zone: 'mydomain.com'
 ```
+
+
+
+
+
+/// add renovate
+/// add typescript
+/// add auto for releseas
