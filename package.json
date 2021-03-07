@@ -14,11 +14,11 @@
     "hjson": "3.2.2"
   },
   "devDependencies": {
-    "@auto-it/all-contributors": "^10.18.3",
-    "@auto-it/first-time-contributor": "^10.18.3",
-    "@auto-it/git-tag": "^10.18.3",
+    "@auto-it/all-contributors": "10.18.3",
+    "@auto-it/first-time-contributor": "10.18.3",
+    "@auto-it/git-tag": "10.18.3",
     "@types/cloudflare": "2.7.0",
-    "auto": "^10.18.3",
+    "auto": "10.18.3",
     "package-version-git-tag": "3.0.0"
   },
   "main": "index.js",
