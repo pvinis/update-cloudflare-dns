@@ -4,7 +4,7 @@
   "scripts": {
     "start": "node index.js",
     "dry": "DRY_RUN=true node index.js",
-    "tag": "package-version-git-tag"
+    "tagg": "package-version-git-tag"
   },
   "dependencies": {
     "@actions/core": "^1.2.6",
