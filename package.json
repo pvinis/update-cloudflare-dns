@@ -1,6 +1,6 @@
 {
   "name": "update-cloudflare-dns-records-action",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "scripts": {
     "start": "node index.js",
     "dry": "DRY_RUN=true node index.js"
