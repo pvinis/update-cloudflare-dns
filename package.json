@@ -1,8 +1,22 @@
 {
   "name": "update-cloudflare-dns-records-action",
   "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js",
+    "dry": "DRY_RUN=true node index.js"
+  },
+  "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/github": "^4.0.0",
+    "cloudflare": "2.7.0",
+    "dotenv": "8.2.0",
+    "hjson": "3.2.2"
+  },
+  "devDependencies": {
+    "@types/cloudflare": "2.7.0"
+  },
   "main": "index.js",
-  "repository": "git@github.com:pvinis/update-cloudflare-dns-records-action.git",
+  "repository": "https://github.com/pvinis/website-cloudflare-dns-records.git",
   "author": "Pavlos Vinieratos <pvinis@gmail.com>",
   "license": "MIT"
 }

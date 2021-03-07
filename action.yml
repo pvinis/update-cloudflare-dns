@@ -1,0 +1,11 @@
+name: 'Update Cloudflare DNS records'
+description: 'Update your Cloudflare DNS records in seconds, using just a config file'
+
+inputs:
+  zone:
+    description: 'Name of domain to update in Cloudflare'
+    required: true
+
+runs:
+  using: 'node12'
+  main: index.js
