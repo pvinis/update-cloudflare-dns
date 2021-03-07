@@ -1177,7 +1177,7 @@ p-try@^1.0.0:
   resolved "https://registry.yarnpkg.com/p-try/-/p-try-1.0.0.tgz#cbc79cdbaf8fd4228e13f621f2b1a237c1b207b3"
   integrity sha1-y8ec26+P1CKOE/Yh8rGiN8GyB7M=
 
-package-version-git-tag@^3.0.0:
+package-version-git-tag@3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/package-version-git-tag/-/package-version-git-tag-3.0.0.tgz#96bc04a1182d0e91092dd51af2ae78a6985257d4"
   integrity sha512-wn45wmHnG6RsAzrmz894pw0LRKHRFUQAuszgE/xxOqvLLlPO+p2manJtesfJu5jbZVTp3L+Su2PtBiecshHm+w==
