@@ -1,9 +1,10 @@
 {
   "name": "update-cloudflare-dns",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "scripts": {
     "start": "node index.js",
-    "dry": "DRY_RUN=true node index.js"
+    "dry": "DRY_RUN=true node index.js",
+    "release": "auto shipit"
   },
   "dependencies": {
     "@actions/core": "^1.2.6",
