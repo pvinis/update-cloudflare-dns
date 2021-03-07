@@ -177,11 +177,6 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@improved/node@^1.0.0":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@improved/node/-/node-1.1.1.tgz#7be3d401b7cd2f848d5bb8713d2826b84fc51817"
-  integrity sha512-ePDxG9UuU9Kobk90ZUjtmDW8IT9U7aRb1/Rl9683MRNM+ur0ocHL2v7TPH2ajTiVSBUFbbeW8vKIt9jrb0JIAA==
-
 "@nodelib/fs.scandir@2.1.4":
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.4.tgz#d4b3549a5db5de2683e0c1071ab4f140904bbf69"
@@ -517,11 +512,6 @@ braces@^3.0.1:
   dependencies:
     fill-range "^7.0.1"
 
-cac@^6.5.8:
-  version "6.7.2"
-  resolved "https://registry.yarnpkg.com/cac/-/cac-6.7.2.tgz#e7f0d21f4776c46c7d0de7976e56fa5562e17597"
-  integrity sha512-w0bH1IF9rEjdi0a6lTtlXYT+vBZEJL9oytaXXRdsD68MH6+SrZGOGsu7s2saHQvYXqwo/wBdkW75tt8wFpj+mw==
-
 call-bind@^1.0.0, call-bind@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/call-bind/-/call-bind-1.0.2.tgz#b1d4e89e688119c3c9a903ad30abb2f6a919be3c"
@@ -625,13 +615,6 @@ color-name@~1.1.4:
   resolved "https://registry.yarnpkg.com/color-name/-/color-name-1.1.4.tgz#c2a09a87acbde69543de6f63fa3995c826c536a2"
   integrity sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==
 
-command-join@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/command-join/-/command-join-3.0.0.tgz#9325753e99e53ca7d2c0e3cec7f557e5bfeba78b"
-  integrity sha512-areSrJRrc9cbaA+Hxhs+QP4y+lkWXClAyOmxd79NvGEqUw1uLLaMKa2Tmuc1AkaER9XzmGTzpFWzwucYottMKw==
-  dependencies:
-    "@improved/node" "^1.0.0"
-
 command-line-application@^0.10.1:
   version "0.10.1"
   resolved "https://registry.yarnpkg.com/command-line-application/-/command-line-application-0.10.1.tgz#9ee0db7e41fe69f532eef0747e9ae958c0d348ae"
@@ -689,7 +672,7 @@ create-error-class@^3.0.0:
   dependencies:
     capture-stack-trace "^1.0.0"
 
-cross-spawn@^7.0.0, cross-spawn@^7.0.2:
+cross-spawn@^7.0.0:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.3.tgz#f73a85b9d5d41d045551c177e2882d4ac85728a6"
   integrity sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==
@@ -1567,15 +1550,6 @@ p-try@^2.0.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/p-try/-/p-try-2.2.0.tgz#cb2868540e313d61de58fafbe35ce9004d5540e6"
   integrity sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==
-
-package-version-git-tag@3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/package-version-git-tag/-/package-version-git-tag-3.0.0.tgz#96bc04a1182d0e91092dd51af2ae78a6985257d4"
-  integrity sha512-wn45wmHnG6RsAzrmz894pw0LRKHRFUQAuszgE/xxOqvLLlPO+p2manJtesfJu5jbZVTp3L+Su2PtBiecshHm+w==
-  dependencies:
-    cac "^6.5.8"
-    command-join "^3.0.0"
-    cross-spawn "^7.0.2"
 
 parent-module@^1.0.0:
   version "1.0.1"
