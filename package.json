@@ -13,7 +13,8 @@
     "hjson": "3.2.2"
   },
   "devDependencies": {
-    "@types/cloudflare": "2.7.0"
+    "@types/cloudflare": "2.7.0",
+    "auto": "^10.18.3"
   },
   "main": "index.js",
   "repository": "https://github.com/pvinis/update-cloudflare-dns.git",

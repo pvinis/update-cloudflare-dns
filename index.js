@@ -40,5 +40,6 @@ const main = async () => {
 	console.log("Records that will be deleted:")
 
 	console.log("Records that will be kept:")
+
 }
 main()

@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    "git-tag",
+    "all-contributors",
+    "first-time-contributor",
+    "released"
+  ],
+  "owner": "pvinis",
+  "repo": "update-cloudflare-dns",
+  "name": "Pavlos Vinieratos",
+  "email": "pvinis@gmail.com",
+  "onlyPublishWithReleaseLabel": true
+}
