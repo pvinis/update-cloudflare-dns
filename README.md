@@ -6,7 +6,7 @@
 ```yml
 uses: pvinis/update-cloudflare-dns@v1.0
 with:
-  zone: 'mydomain.com'
+  zone: mydomain.com
 ```
 
 
