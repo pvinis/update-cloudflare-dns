@@ -1,10 +1,10 @@
 {
   "name": "update-cloudflare-dns",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "scripts": {
     "start": "node index.js",
     "dry": "DRY_RUN=true node index.js",
-    "release": "auto shipit"
+    "tag": "package-version-git-tag"
   },
   "dependencies": {
     "@actions/core": "^1.2.6",
@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@types/cloudflare": "2.7.0",
-    "auto": "^10.18.3"
+    "package-version-git-tag": "^3.0.0"
   },
   "main": "index.js",
   "repository": "https://github.com/pvinis/update-cloudflare-dns.git",
