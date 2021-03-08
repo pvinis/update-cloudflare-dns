@@ -1,11 +1,26 @@
+import * as core from '@actions/core'
+import * as github from '@actions/github'
+import { exit } from 'process'
+import HJSON from "hjson"
+import fs from "fs"
+import Cloudflare from "cloudflare"
+
+import { niceRecordName, printConfigRecord, printRemoteRecord, recordContent, sameRecord } from "./helpers"
+import { Config, ConfigRecord, RemoteRecord } from './types'
+import { absurd } from 'fp-ts/lib/function'
 
 require('dotenv').config()
 
 
 const main = async () => {
-	const ZONE = core.getInput('zone')
-
 	const DRY_RUN: boolean = Boolean(process.env.DRY_RUN ?? 'false')
+
+	const ZONE = DRY_RUN ? process.env.ZONE : core.getInput('zone')
+	if (ZONE === undefined) {
+		console.log("Zone not set. Make sure to provide one in the GitHub action.")
+		core.setFailed("Zone not set.")
+		exit(-1)
+	}
 
 	const TOKEN = process.env.CLOUDFLARE_TOKEN
 	if (TOKEN === undefined) {

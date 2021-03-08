@@ -10,11 +10,7 @@ with:
 
 
 
-/// add renovate
-/// add typescript
-/// add auto for releseas
 
-//// add tests
 //// add an example file
 
 //// add decadejs
