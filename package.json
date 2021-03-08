@@ -1,6 +1,6 @@
 {
   "name": "update-cloudflare-dns",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "scripts": {
     "package": "tsc; ncc build --source-map --license licenses.txt",
     "start": "ts-node index.js",
