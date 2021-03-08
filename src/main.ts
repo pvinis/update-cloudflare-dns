@@ -22,7 +22,8 @@ const main = async () => {
 		exit(-1)
 	}
 
-	const TOKEN = process.env.CLOUDFLARE_TOKEN
+
+	const TOKEN = DRY_RUN ? process.env.CLOUDFLARE_TOKEN : core.getInput('cloudflareToken')
 	if (TOKEN === undefined) {
 		console.log("Cloudflare token not found. Make sure to add one in GitHub environments.")
 		core.setFailed("Cloudflare token not found.")
