@@ -1,0 +1,24 @@
+diff --git a/node_modules/@types/cloudflare/index.d.ts b/node_modules/@types/cloudflare/index.d.ts
+index 60ccd5d..34ed2ad 100644
+--- a/node_modules/@types/cloudflare/index.d.ts
++++ b/node_modules/@types/cloudflare/index.d.ts
+@@ -3,7 +3,7 @@
+ // Definitions by: Samuel Corsi-House <https://github.com/Xenfo>
+ // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
+ 
+-type RecordTypes =
++export type RecordTypes =
+     | 'A'
+     | 'AAAA'
+     | 'CNAME'
+@@ -54,8 +54,8 @@ interface DNSRecords {
+             type: RecordTypes;
+             name: string;
+             content: string;
+-            ttl: number;
+-            priority: number;
++            ttl?: number;
++            priority?: number;
+             proxied?: boolean;
+         },
+     ): ResponseObjectPromise;

@@ -2,24 +2,41 @@
   "name": "update-cloudflare-dns",
   "version": "0.2.7",
   "scripts": {
-    "start": "node index.js",
+    "package": "tsc; ncc build --source-map --license licenses.txt",
+    "start": "ts-node index.js",
     "dry": "DRY_RUN=true node index.js",
-    "bump": "yarn version"
+    "bump": "yarn version",
+    "test": "jest --watch",
+    "test-once": "jest",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@actions/core": "^1.2.6",
-    "@actions/github": "^4.0.0",
+    "@actions/github": "4.0.0",
     "cloudflare": "2.7.0",
     "dotenv": "8.2.0",
-    "hjson": "3.2.2"
+    "fp-ts": "^2.9.5",
+    "hjson": "3.2.2",
+    "ts-node": "9.1.1"
   },
   "devDependencies": {
     "@auto-it/first-time-contributor": "10.18.3",
     "@auto-it/git-tag": "10.18.3",
     "@types/cloudflare": "2.7.0",
-    "auto": "10.18.3"
+    "@types/hjson": "^2.4.2",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^14.14.9",
+    "@typescript-eslint/parser": "^4.8.1",
+    "@vercel/ncc": "^0.25.1",
+    "auto": "10.18.3",
+    "jest": "^26.6.3",
+    "jest-circus": "^26.6.3",
+    "jest-extended": "^0.11.5",
+    "patch-package": "^6.4.5",
+    "ts-jest": "^26.4.4",
+    "typescript": "4.2.3"
   },
-  "main": "index.js",
+  "main": ".build/main.js",
   "repository": "https://github.com/pvinis/update-cloudflare-dns.git",
   "author": "Pavlos Vinieratos <pvinis@gmail.com>",
   "license": "MIT"
