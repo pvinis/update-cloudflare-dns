@@ -44,6 +44,15 @@ describe(sameRecord, () => {
 			{type: "A", name: "wow", ipv4: "11.22.33.44"}
 		)).toBe(true)
 
+		expect(sameRecord(
+			mockRemoteRecord({type: "A", content: "11.22.33.44", proxied: false,}),
+			{type: "A", name: "wow", ipv4: "11.22.33.44", proxied: false}
+		)).toBe(true)
+
+		expect(sameRecord(
+			mockRemoteRecord({type: "A", content: "11.22.33.44", proxied: true,}),
+			{type: "A", name: "wow", ipv4: "11.22.33.44", proxied: false}
+		)).toBe(false)
 	})
 })
 
@@ -94,6 +103,12 @@ describe(printConfigRecord, () => {
 			ipv4: "11.22.33.44",
 		}, "mydomain.com"))
 		.toBe("@	1	IN	A	11.22.33.44")
+		expect(printConfigRecord({
+			type: "TXT",
+			name: "@",
+			content: "wow=pavlos",
+		}, "mydomain.com"))
+		.toBe('@	1	IN	TXT	"wow=pavlos"')
 	})
 
 	it("also prints in full", () => {
