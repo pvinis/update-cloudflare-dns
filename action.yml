@@ -6,7 +6,7 @@ inputs:
     description: Name of domain to update in Cloudflare.
     required: true
   cloudflareToken:
-    description: "Token for Cloudflare. Use something like `${{ secrets.NAME_FOR_ENV_VAR }}`."
+    description: Token for Cloudflare.
     required: true
 
 runs:
