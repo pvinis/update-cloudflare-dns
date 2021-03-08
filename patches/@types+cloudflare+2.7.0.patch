@@ -1,5 +1,5 @@
 diff --git a/node_modules/@types/cloudflare/index.d.ts b/node_modules/@types/cloudflare/index.d.ts
-index 60ccd5d..34ed2ad 100644
+index 60ccd5d..66e86d1 100644
 --- a/node_modules/@types/cloudflare/index.d.ts
 +++ b/node_modules/@types/cloudflare/index.d.ts
 @@ -3,7 +3,7 @@
@@ -22,3 +22,9 @@ index 60ccd5d..34ed2ad 100644
              proxied?: boolean;
          },
      ): ResponseObjectPromise;
+@@ -279,4 +279,4 @@ declare class Cloudflare {
+     stream: Stream;
+ }
+ 
+-export = Cloudflare;
++export default Cloudflare;
