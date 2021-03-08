@@ -3,13 +3,33 @@ require('./sourcemap-register.js');module.exports =
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 650:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.printConfigRecord = exports.printRemoteRecord = exports.recordContent = exports.sameRecord = exports.niceRecordName = void 0;
+exports.partitionRecords = exports.inputOrEnv = exports.printConfigRecord = exports.printRemoteRecord = exports.recordContent = exports.sameRecord = exports.niceRecordName = void 0;
 const function_1 = __webpack_require__(6985);
+const core = __importStar(__webpack_require__(2186));
 const niceRecordName = (rec) => {
     const removeZone = rec.name.replace(rec.zone_name, "");
     if (removeZone === "")
@@ -18,6 +38,7 @@ const niceRecordName = (rec) => {
 };
 exports.niceRecordName = niceRecordName;
 const sameRecord = (remoteRecord, configRecord) => {
+    var _a, _b;
     if (remoteRecord.type !== configRecord.type)
         return false;
     const niceName = exports.niceRecordName(remoteRecord);
@@ -27,11 +48,14 @@ const sameRecord = (remoteRecord, configRecord) => {
         case "A":
             if (remoteRecord.content !== configRecord.ipv4)
                 return false;
+            if (remoteRecord.proxied !== ((_a = configRecord.proxied) !== null && _a !== void 0 ? _a : true))
+                return false;
             break;
         case "AAAA":
-            if (remoteRecord.content !== configRecord.ipv6)
+            if (remoteRecord.content.toLowerCase() !== configRecord.ipv6.toLowerCase())
                 return false;
-            // check for proxied
+            if (remoteRecord.proxied !== ((_b = configRecord.proxied) !== null && _b !== void 0 ? _b : true))
+                return false;
             break;
         // case "CNAME":
         // case "HTTPS":
@@ -75,10 +99,28 @@ exports.printRemoteRecord = printRemoteRecord;
 const printConfigRecord = (record, zone, full = false) => {
     const fullName = `${record.name === "@" ? zone : `${record.name}.${zone}`}.`;
     const name = full ? fullName : record.name;
-    const content = exports.recordContent(record);
+    let content = exports.recordContent(record);
+    if (record.type === "TXT") {
+        content = `"${content}"`;
+    }
     return `${name}\t1\tIN\t${record.type}\t${content}`;
 };
 exports.printConfigRecord = printConfigRecord;
+const inputOrEnv = (inputName, envName) => {
+    const input = core.getInput(inputName);
+    if (input !== '')
+        return input;
+    const env = process.env[envName];
+    return env;
+};
+exports.inputOrEnv = inputOrEnv;
+const partitionRecords = (remote, local, comparator) => {
+    const toBeDeleted = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) === -1);
+    const toBeKept = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) !== -1);
+    const toBeAdded = local.filter(rec => remote.findIndex(possiblySameRec => comparator(possiblySameRec, rec)) === -1);
+    return { toBeDeleted, toBeKept, toBeAdded };
+};
+exports.partitionRecords = partitionRecords;
 
 
 /***/ }),
@@ -129,8 +171,7 @@ const helpers_1 = __webpack_require__(650);
 const function_1 = __webpack_require__(6985);
 __webpack_require__(2437).config();
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    const DRY_RUN = Boolean(process.env.DRY_RUN);
-    const ZONE = DRY_RUN ? process.env.ZONE : core.getInput('zone');
+    const ZONE = helpers_1.inputOrEnv('zone', 'ZONE');
     if (ZONE === undefined) {
         console.log("Zone not set. Make sure to provide one in the GitHub action.");
         core.setFailed("Zone not set.");
@@ -141,17 +182,16 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     // Get the JSON webhook payload for the event that triggered the workflow
     //   const payload = JSON.stringify(github.context.payload, undefined, 2)
     //   console.log(`The event payload: ${payload}`);
-    const TOKEN = DRY_RUN ? process.env.CLOUDFLARE_TOKEN : core.getInput('cloudflareToken');
+    const TOKEN = helpers_1.inputOrEnv('cloudflareToken', 'CLOUDFLARE_TOKEN');
     if (TOKEN === undefined) {
         console.log("Cloudflare token not found. Make sure to add one in GitHub environments.");
         core.setFailed("Cloudflare token not found.");
         process_1.exit(-1);
     }
-    console.log({ ZONE, TOKEN, DRY_RUN });
     const cf = new cloudflare_1.default({
         token: TOKEN
     });
-    console.log("2");
+    const DRY_RUN = Boolean(process.env.DRY_RUN);
     const rawText = fs_1.default.readFileSync("./DNS-RECORDS.hjson").toString();
     const config = hjson_1.default.parse(rawText);
     // Find the right zone
@@ -159,7 +199,6 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const response = yield cf.zones.browse();
         const zones = response.result;
-        console.log("3");
         const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id);
         if (theZones.length === 0) {
             console.log(`No zones found with name: ${ZONE}.`);
@@ -176,81 +215,57 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     // Check which records need to be deleted, kept, or added
     const currentRecords = (yield cf.dnsRecords.browse(zoneId)).result;
-    const toBeDeleted = [];
-    const toBeKept = [];
-    const toBeAdded = config.records;
-    currentRecords.forEach(rec => {
-        // const sameRecordIdx = toBeAdded.findIndex(possiblySameRec => {
-        // if (sameRecord(rec)) {
-        // toBeDeleted.push(rec)
-        // } else {
-        // toBeKept.push(rec)
-        // }
-        // })
-        // if (sameRecordIdx === -1) {
-        // return true
-        // }
-        // toBeAdded.splice(sameRecordIdx, 1)
-        // return false
-    });
+    const { toBeDeleted, toBeKept, toBeAdded } = helpers_1.partitionRecords(currentRecords, config.records, helpers_1.sameRecord);
     console.log("Records that will be deleted:");
-    toBeDeleted.forEach(rec => {
-        console.log("- ", helpers_1.printRemoteRecord(rec));
-    });
-    if (!DRY_RUN) {
-        toBeDeleted.forEach(rec => {
-            cf.dnsRecords.del(zoneId, rec.id);
-        });
-    }
+    yield Promise.all(toBeDeleted.map((rec) => __awaiter(void 0, void 0, void 0, function* () {
+        if (!DRY_RUN) {
+            try {
+                yield cf.dnsRecords.del(zoneId, rec.id);
+                console.log("✔ ", helpers_1.printRemoteRecord(rec));
+            }
+            catch (err) {
+                console.log("❌ ", helpers_1.printRemoteRecord(rec));
+                console.log(err);
+            }
+        }
+    })));
     console.log("Records that will be kept:");
     toBeKept.forEach(rec => {
-        console.log("- ", helpers_1.printRemoteRecord(rec));
+        console.log("✔ ", helpers_1.printRemoteRecord(rec));
     });
     console.log("Records that will be added:");
-    toBeAdded.forEach(rec => {
-        console.log("- ", helpers_1.printConfigRecord(rec, ZONE));
-    });
-    if (!DRY_RUN) {
-        toBeAdded.forEach(rec => {
-            var _a;
-            const content = helpers_1.recordContent(rec);
-            switch (rec.type) {
-                case "A":
-                case "AAAA":
-                    cf.dnsRecords.add(zoneId, {
-                        type: rec.type,
-                        name: rec.name,
-                        content,
-                        proxied: (_a = rec.proxied) !== null && _a !== void 0 ? _a : true,
-                    });
-                    break;
-                // 			case "CNAME":
-                // 			case "HTTPS":
-                case "TXT":
-                    cf.dnsRecords.add(zoneId, {
-                        type: rec.type,
-                        name: rec.name,
-                        content,
-                    });
-                    break;
-                // 			case "SRV":
-                // 			case "LOC":
-                // 			case "MX":
-                // 			case "NS":
-                // 			case "SPF":
-                // 			case "CERT":
-                // 			case "DNSKEY":
-                // 			case "DS":
-                // 			case "NAPTR":
-                // 			case "SMIMEA":
-                // 			case "SSHFP":
-                // 			case "SVCB":
-                // 			case "TLSA":
-                // 			case "URI read only":
-                default: function_1.absurd(rec);
+    yield Promise.all(toBeAdded.map((rec) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
+        if (!DRY_RUN) {
+            try {
+                const content = helpers_1.recordContent(rec);
+                switch (rec.type) {
+                    case "A":
+                    case "AAAA":
+                        yield cf.dnsRecords.add(zoneId, {
+                            type: rec.type,
+                            name: rec.name,
+                            content,
+                            proxied: (_a = rec.proxied) !== null && _a !== void 0 ? _a : true,
+                        });
+                        break;
+                    case "TXT":
+                        yield cf.dnsRecords.add(zoneId, {
+                            type: rec.type,
+                            name: rec.name,
+                            content,
+                        });
+                        break;
+                    default: function_1.absurd(rec);
+                }
+                console.log("✔ ", helpers_1.printConfigRecord(rec, ZONE));
             }
-        });
-    }
+            catch (err) {
+                console.log("❌ ", helpers_1.printConfigRecord(rec, ZONE));
+                console.log(err);
+            }
+        }
+    })));
     // make sure it errors out if something is missing
     // add some tests for niceName, sameRec
     // make typescript

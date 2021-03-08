@@ -1,7 +1,5 @@
-import { RecordTypes } from 'cloudflare'
 import { absurd } from "fp-ts/lib/function"
-import { cons } from 'fp-ts/lib/ReadonlyArray'
-import { record } from 'fp-ts/lib/Record'
+import * as core from '@actions/core'
 import { ConfigRecord, RemoteRecord } from './types'
 
 
@@ -21,11 +19,12 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 		switch (configRecord.type) {
 			case "A":
 				if (remoteRecord.content !== configRecord.ipv4) return false
+				if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
 				break
 
 			case "AAAA":
-				if (remoteRecord.content !== configRecord.ipv6) return false
-				// check for proxied
+				if (remoteRecord.content.toLowerCase() !== configRecord.ipv6.toLowerCase()) return false
+				if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
 				break
 
 
@@ -62,6 +61,27 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 		record.name === "@" ? zone : `${record.name}.${zone}`
 	}.`
 	const name = full ? fullName : record.name
-	const content = recordContent(record)
+	let content = recordContent(record)
+	if (record.type === "TXT") {
+		content = `"${content}"`
+	}
 	return `${name}\t1\tIN\t${record.type}\t${content}`
+}
+
+
+export const inputOrEnv = (inputName: string, envName: string) => {
+	const input = core.getInput(inputName)
+	if (input !== '') return input
+
+	const env = process.env[envName]
+	return env
+}
+
+
+export const partitionRecords = <T, U>(remote: T[], local: U[], comparator: (a: T,b:U)=> boolean): {toBeDeleted: T[], toBeKept:T[], toBeAdded:U[]} => {
+	const toBeDeleted = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) === -1)
+	const toBeKept = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) !== -1)
+	const toBeAdded = local.filter(rec => remote.findIndex(possiblySameRec => comparator(possiblySameRec, rec)) === -1)
+
+	return { toBeDeleted, toBeKept, toBeAdded }
 }

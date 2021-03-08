@@ -5,7 +5,7 @@ import HJSON from "hjson"
 import fs from "fs"
 import Cloudflare from "cloudflare"
 
-import { niceRecordName, printConfigRecord, printRemoteRecord, recordContent, sameRecord } from "./helpers"
+import { inputOrEnv, niceRecordName, partitionRecords, printConfigRecord, printRemoteRecord, recordContent, sameRecord } from "./helpers"
 import { Config, ConfigRecord, RemoteRecord } from './types'
 import { absurd } from 'fp-ts/lib/function'
 
@@ -13,9 +13,7 @@ require('dotenv').config()
 
 
 const main = async () => {
-	const DRY_RUN: boolean = Boolean(process.env.DRY_RUN)
-
-	const ZONE = DRY_RUN ? process.env.ZONE : core.getInput('zone')
+	const ZONE = inputOrEnv('zone', 'ZONE')
 	if (ZONE === undefined) {
 		console.log("Zone not set. Make sure to provide one in the GitHub action.")
 		core.setFailed("Zone not set.")
@@ -23,19 +21,19 @@ const main = async () => {
 	}
 
 
-	const TOKEN = DRY_RUN ? process.env.CLOUDFLARE_TOKEN : core.getInput('cloudflareToken')
+	const TOKEN = inputOrEnv('cloudflareToken', 'CLOUDFLARE_TOKEN')
 	if (TOKEN === undefined) {
 		console.log("Cloudflare token not found. Make sure to add one in GitHub environments.")
 		core.setFailed("Cloudflare token not found.")
 		exit(-1)
 	}
 
-	console.log({ZONE, TOKEN, DRY_RUN})
 	const cf = new Cloudflare({
 		token: TOKEN
 	})
 
-	console.log("2")
+
+	const DRY_RUN: boolean = Boolean(process.env.DRY_RUN)
 
 	const rawText = fs.readFileSync("./DNS-RECORDS.hjson").toString()
 	const config: Config = HJSON.parse(rawText)
@@ -47,7 +45,6 @@ const main = async () => {
 	try {
 		const response = await cf.zones.browse() as any
 		const zones: Zone[] = response.result
-		console.log("3")
 		const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id)
 		if (theZones.length === 0) {
 			console.log(`No zones found with name: ${ZONE}.`)
@@ -65,63 +62,63 @@ const main = async () => {
 	// Check which records need to be deleted, kept, or added
 	const currentRecords: RemoteRecord[] = ((await cf.dnsRecords.browse(zoneId)) as any).result
 
-	const toBeDeleted: RemoteRecord[] = []
-	const toBeKept: RemoteRecord[] = []
-	const toBeAdded: ConfigRecord[] = config.records
 
-	currentRecords.forEach(rec => {
-	// const sameRecordIdx = toBeAdded.findIndex(possiblySameRec => {
-	})
+	const {toBeDeleted, toBeKept, toBeAdded} = partitionRecords(currentRecords, config.records, sameRecord)
 
 	console.log("Records that will be deleted:")
-	toBeDeleted.forEach(rec => {
-		console.log("- ", printRemoteRecord(rec))
-	})
+	await Promise.all(toBeDeleted.map(async rec => {
 
-	if (!DRY_RUN) {
-		toBeDeleted.forEach(rec => {
-			cf.dnsRecords.del(zoneId, rec.id)
-		})
-	}
+		if (!DRY_RUN) {
+			try {
+				await cf.dnsRecords.del(zoneId, rec.id)
+				console.log("✔ ", printRemoteRecord(rec))
+			} catch (err) {
+				console.log("❌ ", printRemoteRecord(rec))
+				console.log(err)
+			}
+		}
+	}))
 
 	console.log("Records that will be kept:")
 	toBeKept.forEach(rec => {
-		console.log("- ", printRemoteRecord(rec))
+		console.log("✔ ", printRemoteRecord(rec))
 	})
 
 	console.log("Records that will be added:")
-	toBeAdded.forEach(rec => {
-		console.log("- ", printConfigRecord(rec, ZONE))
-	})
+	await Promise.all(toBeAdded.map(async rec => {
+		if (!DRY_RUN) {
+			try {
+				const content = recordContent(rec)
+				switch (rec.type) {
+					case "A":
+						case "AAAA":
+							await cf.dnsRecords.add(zoneId, {
+								type: rec.type,
+								name: rec.name,
+								content,
+								proxied: rec.proxied ?? true,
+							})
+							break
 
-	if (!DRY_RUN) {
-		toBeAdded.forEach(rec => {
-			const content = recordContent(rec)
-			switch (rec.type) {
-				case "A":
-				case "AAAA":
-					cf.dnsRecords.add(zoneId, {
-						type: rec.type,
-						name: rec.name,
-						content,
-						proxied: rec.proxied ?? true,
-					})
-					break
+						case "TXT":
+							await cf.dnsRecords.add(zoneId, {
+								type: rec.type,
+								name: rec.name,
+								content,
+							})
+							break
 
-
-				case "TXT":
-					cf.dnsRecords.add(zoneId, {
-						type: rec.type,
-						name: rec.name,
-						content,
-					})
-					break
-
-
-				default: absurd(rec)
+						default: absurd(rec)
+				}
+				console.log("✔ ", printConfigRecord(rec, ZONE))
+			} catch (err) {
+				console.log("❌ ", printConfigRecord(rec, ZONE))
+				console.log(err)
 			}
-		})
-	}
+		}
+	}))
+
+
 
 
 

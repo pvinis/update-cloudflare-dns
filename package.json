@@ -1,6 +1,6 @@
 {
   "name": "update-cloudflare-dns",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "scripts": {
     "build": "tsc",
     "package": "yarn build; ncc build --source-map --license licenses.txt",
