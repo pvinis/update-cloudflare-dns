@@ -130,14 +130,19 @@ const function_1 = __webpack_require__(6985);
 __webpack_require__(2437).config();
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const ZONE = core.getInput('zone');
+    const DRY_RUN = Boolean((_a = process.env.DRY_RUN) !== null && _a !== void 0 ? _a : 'false');
+    const ZONE = DRY_RUN ? process.env.ZONE : core.getInput('zone');
+    if (ZONE === undefined) {
+        console.log("Zone not set. Make sure to provide one in the GitHub action.");
+        core.setFailed("Zone not set.");
+        process_1.exit(-1);
+    }
     //   const time = (new Date()).toTimeString();
     ///   core.setOutput("time", time);
     // Get the JSON webhook payload for the event that triggered the workflow
     //   const payload = JSON.stringify(github.context.payload, undefined, 2)
     //   console.log(`The event payload: ${payload}`);
-    const DRY_RUN = Boolean((_a = process.env.DRY_RUN) !== null && _a !== void 0 ? _a : 'false');
-    const TOKEN = process.env.CLOUDFLARE_TOKEN;
+    const TOKEN = DRY_RUN ? process.env.CLOUDFLARE_TOKEN : core.getInput('cloudflareToken');
     if (TOKEN === undefined) {
         console.log("Cloudflare token not found. Make sure to add one in GitHub environments.");
         core.setFailed("Cloudflare token not found.");
@@ -5237,6 +5242,124 @@ exports.bindTo_ = bindTo_;
 
 /***/ }),
 
+/***/ 1585:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+const PassThrough = __webpack_require__(2413).PassThrough;
+
+module.exports = opts => {
+	opts = Object.assign({}, opts);
+
+	const array = opts.array;
+	let encoding = opts.encoding;
+	const buffer = encoding === 'buffer';
+	let objectMode = false;
+
+	if (array) {
+		objectMode = !(encoding || buffer);
+	} else {
+		encoding = encoding || 'utf8';
+	}
+
+	if (buffer) {
+		encoding = null;
+	}
+
+	let len = 0;
+	const ret = [];
+	const stream = new PassThrough({objectMode});
+
+	if (encoding) {
+		stream.setEncoding(encoding);
+	}
+
+	stream.on('data', chunk => {
+		ret.push(chunk);
+
+		if (objectMode) {
+			len = ret.length;
+		} else {
+			len += chunk.length;
+		}
+	});
+
+	stream.getBufferedValue = () => {
+		if (array) {
+			return ret;
+		}
+
+		return buffer ? Buffer.concat(ret, len) : ret.join('');
+	};
+
+	stream.getBufferedLength = () => len;
+
+	return stream;
+};
+
+
+/***/ }),
+
+/***/ 1766:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+const bufferStream = __webpack_require__(1585);
+
+function getStream(inputStream, opts) {
+	if (!inputStream) {
+		return Promise.reject(new Error('Expected a stream'));
+	}
+
+	opts = Object.assign({maxBuffer: Infinity}, opts);
+
+	const maxBuffer = opts.maxBuffer;
+	let stream;
+	let clean;
+
+	const p = new Promise((resolve, reject) => {
+		const error = err => {
+			if (err) { // null check
+				err.bufferedData = stream.getBufferedValue();
+			}
+
+			reject(err);
+		};
+
+		stream = bufferStream(opts);
+		inputStream.once('error', error);
+		inputStream.pipe(stream);
+
+		stream.on('data', () => {
+			if (stream.getBufferedLength() > maxBuffer) {
+				reject(new Error('maxBuffer exceeded'));
+			}
+		});
+		stream.once('error', error);
+		stream.on('end', resolve);
+
+		clean = () => {
+			// some streams doesn't implement the `stream.Readable` interface correctly
+			if (inputStream.unpipe) {
+				inputStream.unpipe(stream);
+			}
+		};
+	});
+
+	p.then(clean, clean);
+
+	return p.then(() => stream.getBufferedValue());
+}
+
+module.exports = getStream;
+module.exports.buffer = (stream, opts) => getStream(stream, Object.assign({}, opts, {encoding: 'buffer'}));
+module.exports.array = (stream, opts) => getStream(stream, Object.assign({}, opts, {array: true}));
+
+
+/***/ }),
+
 /***/ 3798:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -5250,7 +5373,7 @@ const urlLib = __webpack_require__(8835);
 const querystring = __webpack_require__(1191);
 const duplexer3 = __webpack_require__(7994);
 const isStream = __webpack_require__(1554);
-const getStream = __webpack_require__(6741);
+const getStream = __webpack_require__(1766);
 const timedOut = __webpack_require__(9478);
 const urlParseLax = __webpack_require__(3194);
 const lowercaseKeys = __webpack_require__(9662);
@@ -5605,124 +5728,6 @@ got.MaxRedirectsError = createErrorClass('MaxRedirectsError', function (statusCo
 });
 
 module.exports = got;
-
-
-/***/ }),
-
-/***/ 5066:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-const PassThrough = __webpack_require__(2413).PassThrough;
-
-module.exports = opts => {
-	opts = Object.assign({}, opts);
-
-	const array = opts.array;
-	let encoding = opts.encoding;
-	const buffer = encoding === 'buffer';
-	let objectMode = false;
-
-	if (array) {
-		objectMode = !(encoding || buffer);
-	} else {
-		encoding = encoding || 'utf8';
-	}
-
-	if (buffer) {
-		encoding = null;
-	}
-
-	let len = 0;
-	const ret = [];
-	const stream = new PassThrough({objectMode});
-
-	if (encoding) {
-		stream.setEncoding(encoding);
-	}
-
-	stream.on('data', chunk => {
-		ret.push(chunk);
-
-		if (objectMode) {
-			len = ret.length;
-		} else {
-			len += chunk.length;
-		}
-	});
-
-	stream.getBufferedValue = () => {
-		if (array) {
-			return ret;
-		}
-
-		return buffer ? Buffer.concat(ret, len) : ret.join('');
-	};
-
-	stream.getBufferedLength = () => len;
-
-	return stream;
-};
-
-
-/***/ }),
-
-/***/ 6741:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-const bufferStream = __webpack_require__(5066);
-
-function getStream(inputStream, opts) {
-	if (!inputStream) {
-		return Promise.reject(new Error('Expected a stream'));
-	}
-
-	opts = Object.assign({maxBuffer: Infinity}, opts);
-
-	const maxBuffer = opts.maxBuffer;
-	let stream;
-	let clean;
-
-	const p = new Promise((resolve, reject) => {
-		const error = err => {
-			if (err) { // null check
-				err.bufferedData = stream.getBufferedValue();
-			}
-
-			reject(err);
-		};
-
-		stream = bufferStream(opts);
-		inputStream.once('error', error);
-		inputStream.pipe(stream);
-
-		stream.on('data', () => {
-			if (stream.getBufferedLength() > maxBuffer) {
-				reject(new Error('maxBuffer exceeded'));
-			}
-		});
-		stream.once('error', error);
-		stream.on('end', resolve);
-
-		clean = () => {
-			// some streams doesn't implement the `stream.Readable` interface correctly
-			if (inputStream.unpipe) {
-				inputStream.unpipe(stream);
-			}
-		};
-	});
-
-	p.then(clean, clean);
-
-	return p.then(() => stream.getBufferedValue());
-}
-
-module.exports = getStream;
-module.exports.buffer = (stream, opts) => getStream(stream, Object.assign({}, opts, {encoding: 'buffer'}));
-module.exports.array = (stream, opts) => getStream(stream, Object.assign({}, opts, {array: true}));
 
 
 /***/ }),
