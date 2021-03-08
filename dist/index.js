@@ -129,8 +129,7 @@ const helpers_1 = __webpack_require__(650);
 const function_1 = __webpack_require__(6985);
 __webpack_require__(2437).config();
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const DRY_RUN = Boolean((_a = process.env.DRY_RUN) !== null && _a !== void 0 ? _a : 'false');
+    const DRY_RUN = Boolean(process.env.DRY_RUN);
     const ZONE = DRY_RUN ? process.env.ZONE : core.getInput('zone');
     if (ZONE === undefined) {
         console.log("Zone not set. Make sure to provide one in the GitHub action.");
