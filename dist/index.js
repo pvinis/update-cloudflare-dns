@@ -147,21 +147,33 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         core.setFailed("Cloudflare token not found.");
         process_1.exit(-1);
     }
+    console.log("1");
     const cf = new cloudflare_1.default({
         token: TOKEN
     });
+    console.log("2");
     const rawText = fs_1.default.readFileSync("./DNS-RECORDS.hjson").toString();
     const config = hjson_1.default.parse(rawText);
     // Find the right zone
-    const zones = (yield cf.zones.browse()).result;
-    const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id);
-    if (theZones.length === 0) {
-        console.log(`No zones found with name: ${ZONE}.`);
-        console.log("Make sure you have it right in DNS-RECORDS.hjson.");
-        core.setFailed("Zone not found.");
+    let zoneId = "";
+    try {
+        const response = yield cf.zones.browse();
+        const zones = response.result;
+        console.log("3");
+        const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id);
+        if (theZones.length === 0) {
+            console.log(`No zones found with name: ${ZONE}.`);
+            console.log("Make sure you have it right in DNS-RECORDS.hjson.");
+            core.setFailed("Zone not found.");
+            process_1.exit(-1);
+        }
+        zoneId = theZones[0];
+    }
+    catch (err) {
+        console.log(err);
+        core.setFailed(err);
         process_1.exit(-1);
     }
-    const zoneId = theZones[0];
     // Check which records need to be deleted, kept, or added
     const currentRecords = (yield cf.dnsRecords.browse(zoneId)).result;
     const toBeDeleted = [];
