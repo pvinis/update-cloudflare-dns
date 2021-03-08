@@ -1,12 +1,12 @@
 {
   "name": "update-cloudflare-dns",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "scripts": {
     "build": "tsc",
     "package": "yarn build; ncc build --source-map --license licenses.txt",
     "start": "yarn build; node .build/main.js",
     "dry": "yarn build; DRY_RUN=true node .build/main.js",
-    "bump": "yarn version",
+    "bump": "yarn package; yarn version",
     "test": "jest --watch",
     "test-once": "jest",
     "postinstall": "patch-package"

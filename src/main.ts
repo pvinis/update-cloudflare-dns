@@ -13,7 +13,7 @@ require('dotenv').config()
 
 
 const main = async () => {
-	const DRY_RUN: boolean = Boolean(process.env.DRY_RUN ?? 'false')
+	const DRY_RUN: boolean = Boolean(process.env.DRY_RUN)
 
 	const ZONE = DRY_RUN ? process.env.ZONE : core.getInput('zone')
 	if (ZONE === undefined) {
@@ -60,6 +60,7 @@ const main = async () => {
 	const toBeAdded: ConfigRecord[] = config.records
 
 	currentRecords.forEach(rec => {
+	// const sameRecordIdx = toBeAdded.findIndex(possiblySameRec => {
 	})
 
 	console.log("Records that will be deleted:")
