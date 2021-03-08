@@ -9,6 +9,7 @@
     "bump": "yarn version",
     "test": "jest --watch",
     "test-once": "jest",
+    "lint": "eslint --fix src/*",
     "postinstall": "patch-package"
   },
   "dependencies": {
@@ -20,18 +21,22 @@
     "hjson": "3.2.2"
   },
   "devDependencies": {
+    "@decadejs/eslint-config-base": "1.0.5",
     "@types/cloudflare": "2.7.0",
     "@types/hjson": "2.4.2",
     "@types/jest": "26.0.20",
     "@types/node": "14.14.32",
-    "@typescript-eslint/parser": "4.17.0",
+    "@typescript-eslint/eslint-plugin": "^4.17.0",
+    "@typescript-eslint/parser": "^4.17.0",
     "@vercel/ncc": "0.27.0",
+    "eslint": "^7.21.0",
+    "eslint-plugin-import": "^2.22.1",
     "jest": "26.6.3",
     "jest-circus": "26.6.3",
     "jest-extended": "0.11.5",
     "patch-package": "6.4.6",
     "ts-jest": "26.5.3",
-    "typescript": "4.2.3"
+    "typescript": "^4.2.3"
   },
   "main": ".build/main.js",
   "repository": "https://github.com/pvinis/update-cloudflare-dns.git",
