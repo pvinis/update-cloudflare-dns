@@ -30,10 +30,12 @@ const main = async () => {
 		exit(-1)
 	}
 
+	console.log({ZONE, TOKEN, DRY_RUN})
 	const cf = new Cloudflare({
 		token: TOKEN
 	})
 
+	console.log("2")
 
 	const rawText = fs.readFileSync("./DNS-RECORDS.hjson").toString()
 	const config: Config = HJSON.parse(rawText)
@@ -41,16 +43,24 @@ const main = async () => {
 
 	interface Zone { name: string, id: string }
 	// Find the right zone
-	const zones: Zone[] = ((await cf.zones.browse()) as any).result
-	const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id)
-	if (theZones.length === 0) {
-		console.log(`No zones found with name: ${ZONE}.`)
-		console.log("Make sure you have it right in DNS-RECORDS.hjson.")
-		core.setFailed("Zone not found.")
+	let zoneId = ""
+	try {
+		const response = await cf.zones.browse() as any
+		const zones: Zone[] = response.result
+		console.log("3")
+		const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id)
+		if (theZones.length === 0) {
+			console.log(`No zones found with name: ${ZONE}.`)
+			console.log("Make sure you have it right in DNS-RECORDS.hjson.")
+			core.setFailed("Zone not found.")
+			exit(-1)
+		}
+		zoneId = theZones[0]
+	} catch (err) {
+		console.log(err)
+		core.setFailed(err)
 		exit(-1)
 	}
-
-	const zoneId = theZones[0]
 
 	// Check which records need to be deleted, kept, or added
 	const currentRecords: RemoteRecord[] = ((await cf.dnsRecords.browse(zoneId)) as any).result

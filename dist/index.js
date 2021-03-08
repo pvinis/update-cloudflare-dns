@@ -147,7 +147,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         core.setFailed("Cloudflare token not found.");
         process_1.exit(-1);
     }
-    console.log("1");
+    console.log({ ZONE, TOKEN, DRY_RUN });
     const cf = new cloudflare_1.default({
         token: TOKEN
     });
