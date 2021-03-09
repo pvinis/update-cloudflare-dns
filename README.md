@@ -13,7 +13,6 @@ with:
 
 //// add an example file
 
-//// add decadejs
 //link to the template repo!
 
 
