@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: The new version to bump to.
+        description: The new version to bump to
         required: true
 
 jobs:
