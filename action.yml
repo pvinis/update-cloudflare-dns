@@ -3,7 +3,7 @@ description: Update your Cloudflare DNS records in seconds, using just a config 
 
 inputs:
   zone:
-    description: Name of domain to update in Cloudflare.
+    description: Name of domain to update in Cloudflare
     required: true
   cloudflareToken:
     description: Token for Cloudflare. Use something like `${{ secrets.NAME_FOR_ENV_VAR }}`.
