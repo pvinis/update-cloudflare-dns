@@ -13,6 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: yarn bump --version ${{ github.event.inputs.version }}
-      - uses: uses: ad-m/github-push-action@v0.6.0
+      - uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
