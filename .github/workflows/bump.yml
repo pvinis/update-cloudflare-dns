@@ -12,13 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: yarn bump --version ${{ github.event.inputs.version }}
       - run: |
           git config --local user.email "pvinis+bot@gmail.com"
           git config --local user.name "Github Actions Bot"
-          git status
-          git add .
-          git commit -m "Bump to ${{ github.event.inputs.version }}"
+          yarn bump --version ${{ github.event.inputs.version }}
       - uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
