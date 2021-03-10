@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of the personal token
       - name: set up git and bump version
         run: |
           git config --local user.email "pvinis+bot@gmail.com"
