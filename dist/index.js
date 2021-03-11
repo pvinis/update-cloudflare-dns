@@ -3,7 +3,7 @@ require('./sourcemap-register.js');module.exports =
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 650:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -28,44 +28,50 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.partitionRecords = exports.inputOrEnv = exports.printConfigRecord = exports.printRemoteRecord = exports.recordContent = exports.sameRecord = exports.niceRecordName = void 0;
-const function_1 = __webpack_require__(6985);
-const core = __importStar(__webpack_require__(2186));
+const function_1 = __nccwpck_require__(6985);
+const core = __importStar(__nccwpck_require__(2186));
 const niceRecordName = (rec) => {
-    const removeZone = rec.name.replace(rec.zone_name, "");
-    if (removeZone === "")
-        return "@";
+    const removeZone = rec.name.replace(rec.zone_name, '');
+    if (removeZone === '')
+        return '@';
     return removeZone.slice(0, -1);
 };
 exports.niceRecordName = niceRecordName;
 const sameRecord = (remoteRecord, configRecord) => {
-    var _a, _b;
+    var _c, _d;
     if (remoteRecord.type !== configRecord.type)
         return false;
     const niceName = exports.niceRecordName(remoteRecord);
     if (niceName !== configRecord.name)
         return false;
     switch (configRecord.type) {
-        case "A":
+        case 'A':
             if (remoteRecord.content !== configRecord.ipv4)
                 return false;
-            if (remoteRecord.proxied !== ((_a = configRecord.proxied) !== null && _a !== void 0 ? _a : true))
+            if (remoteRecord.proxied !== ((_c = configRecord.proxied) !== null && _c !== void 0 ? _c : true))
                 return false;
             break;
-        case "AAAA":
+        case 'AAAA':
             if (remoteRecord.content.toLowerCase() !== configRecord.ipv6.toLowerCase())
                 return false;
-            if (remoteRecord.proxied !== ((_b = configRecord.proxied) !== null && _b !== void 0 ? _b : true))
+            if (remoteRecord.proxied !== ((_d = configRecord.proxied) !== null && _d !== void 0 ? _d : true))
                 return false;
             break;
         // case "CNAME":
         // case "HTTPS":
-        case "TXT":
+        case 'TXT':
             if (remoteRecord.content !== configRecord.content)
                 return false;
             break;
         // case "SRV":
         // case "LOC":
-        // case "MX":
+        //
+        case 'MX':
+            if (remoteRecord.content !== configRecord.mailServer)
+                return false;
+            if (remoteRecord.priority !== configRecord.priority)
+                return false;
+            break;
         // case "NS":
         // case "SPF":
         // case "CERT":
@@ -84,9 +90,10 @@ const sameRecord = (remoteRecord, configRecord) => {
 exports.sameRecord = sameRecord;
 const recordContent = (record) => {
     switch (record.type) {
-        case "A": return record.ipv4;
-        case "AAAA": return record.ipv6;
-        case "TXT": return record.content;
+        case 'A': return record.ipv4;
+        case 'AAAA': return record.ipv6;
+        case 'TXT': return record.content;
+        case 'MX': return record.mailServer;
     }
     function_1.absurd(record);
 };
@@ -97,11 +104,17 @@ const printRemoteRecord = (record, full = false) => {
 };
 exports.printRemoteRecord = printRemoteRecord;
 const printConfigRecord = (record, zone, full = false) => {
-    const fullName = `${record.name === "@" ? zone : `${record.name}.${zone}`}.`;
+    const fullName = `${record.name === '@' ? zone : `${record.name}.${zone}`}.`;
     const name = full ? fullName : record.name;
     let content = exports.recordContent(record);
-    if (record.type === "TXT") {
-        content = `"${content}"`;
+    switch (record.type) {
+        case 'TXT':
+            content = `"${content}"`;
+            break;
+        case 'MX':
+            content = `${content}.`;
+            break;
+        default: break;
     }
     return `${name}\t1\tIN\t${record.type}\t${content}`;
 };
@@ -126,7 +139,7 @@ exports.partitionRecords = partitionRecords;
 /***/ }),
 
 /***/ 4063:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -162,19 +175,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__webpack_require__(2186));
-const process_1 = __webpack_require__(1765);
-const hjson_1 = __importDefault(__webpack_require__(24));
-const fs_1 = __importDefault(__webpack_require__(5747));
-const cloudflare_1 = __importDefault(__webpack_require__(5277));
-const helpers_1 = __webpack_require__(650);
-const function_1 = __webpack_require__(6985);
-__webpack_require__(2437).config();
+const core = __importStar(__nccwpck_require__(2186));
+// import * as github from '@actions/github'
+const process_1 = __nccwpck_require__(1765);
+const hjson_1 = __importDefault(__nccwpck_require__(24));
+const fs_1 = __importDefault(__nccwpck_require__(5747));
+const cloudflare_1 = __importDefault(__nccwpck_require__(5277));
+const function_1 = __nccwpck_require__(6985);
+const helpers_1 = __nccwpck_require__(650);
+__nccwpck_require__(2437).config();
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const ZONE = helpers_1.inputOrEnv('zone', 'ZONE');
     if (ZONE === undefined) {
-        console.log("Zone not set. Make sure to provide one in the GitHub action.");
-        core.setFailed("Zone not set.");
+        console.log('Zone not set. Make sure to provide one in the GitHub action.');
+        core.setFailed('Zone not set.');
         process_1.exit(-1);
     }
     //   const time = (new Date()).toTimeString();
@@ -184,26 +198,26 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     //   console.log(`The event payload: ${payload}`);
     const TOKEN = helpers_1.inputOrEnv('cloudflareToken', 'CLOUDFLARE_TOKEN');
     if (TOKEN === undefined) {
-        console.log("Cloudflare token not found. Make sure to add one in GitHub environments.");
-        core.setFailed("Cloudflare token not found.");
+        console.log('Cloudflare token not found. Make sure to add one in GitHub environments.');
+        core.setFailed('Cloudflare token not found.');
         process_1.exit(-1);
     }
     const cf = new cloudflare_1.default({
-        token: TOKEN
+        token: TOKEN,
     });
     const DRY_RUN = Boolean(process.env.DRY_RUN);
-    const rawText = fs_1.default.readFileSync("./DNS-RECORDS.hjson").toString();
+    const rawText = fs_1.default.readFileSync('./DNS-RECORDS.hjson').toString();
     const config = hjson_1.default.parse(rawText);
     // Find the right zone
-    let zoneId = "";
+    let zoneId = '';
     try {
         const response = yield cf.zones.browse();
         const zones = response.result;
         const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id);
         if (theZones.length === 0) {
             console.log(`No zones found with name: ${ZONE}.`);
-            console.log("Make sure you have it right in DNS-RECORDS.hjson.");
-            core.setFailed("Zone not found.");
+            console.log('Make sure you have it right in DNS-RECORDS.hjson.');
+            core.setFailed('Zone not found.');
             process_1.exit(-1);
         }
         zoneId = theZones[0];
@@ -216,32 +230,32 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     // Check which records need to be deleted, kept, or added
     const currentRecords = (yield cf.dnsRecords.browse(zoneId)).result;
     const { toBeDeleted, toBeKept, toBeAdded } = helpers_1.partitionRecords(currentRecords, config.records, helpers_1.sameRecord);
-    console.log("Records that will be deleted:");
+    console.log('Records that will be deleted:');
     yield Promise.all(toBeDeleted.map((rec) => __awaiter(void 0, void 0, void 0, function* () {
         if (!DRY_RUN) {
             try {
                 yield cf.dnsRecords.del(zoneId, rec.id);
-                console.log("✔ ", helpers_1.printRemoteRecord(rec));
+                console.log('✔ ', helpers_1.printRemoteRecord(rec));
             }
             catch (err) {
-                console.log("❌ ", helpers_1.printRemoteRecord(rec));
+                console.log('❌ ', helpers_1.printRemoteRecord(rec));
                 console.log(err);
             }
         }
     })));
-    console.log("Records that will be kept:");
+    console.log('Records that will be kept:');
     toBeKept.forEach(rec => {
-        console.log("✔ ", helpers_1.printRemoteRecord(rec));
+        console.log('✔ ', helpers_1.printRemoteRecord(rec));
     });
-    console.log("Records that will be added:");
+    console.log('Records that will be added:');
     yield Promise.all(toBeAdded.map((rec) => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
         if (!DRY_RUN) {
             try {
                 const content = helpers_1.recordContent(rec);
                 switch (rec.type) {
-                    case "A":
-                    case "AAAA":
+                    case 'A':
+                    case 'AAAA':
                         yield cf.dnsRecords.add(zoneId, {
                             type: rec.type,
                             name: rec.name,
@@ -249,7 +263,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                             proxied: (_a = rec.proxied) !== null && _a !== void 0 ? _a : true,
                         });
                         break;
-                    case "TXT":
+                    case 'TXT':
                         yield cf.dnsRecords.add(zoneId, {
                             type: rec.type,
                             name: rec.name,
@@ -258,10 +272,10 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                         break;
                     default: function_1.absurd(rec);
                 }
-                console.log("✔ ", helpers_1.printConfigRecord(rec, ZONE));
+                console.log('✔ ', helpers_1.printConfigRecord(rec, ZONE));
             }
             catch (err) {
-                console.log("❌ ", helpers_1.printConfigRecord(rec, ZONE));
+                console.log('❌ ', helpers_1.printConfigRecord(rec, ZONE));
                 console.log(err);
             }
         }
@@ -278,7 +292,7 @@ main();
 /***/ }),
 
 /***/ 7351:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -290,8 +304,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const os = __importStar(__webpack_require__(2087));
-const utils_1 = __webpack_require__(5278);
+const os = __importStar(__nccwpck_require__(2087));
+const utils_1 = __nccwpck_require__(5278);
 /**
  * Commands
  *
@@ -364,7 +378,7 @@ function escapeProperty(s) {
 /***/ }),
 
 /***/ 2186:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -385,11 +399,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const command_1 = __webpack_require__(7351);
-const file_command_1 = __webpack_require__(717);
-const utils_1 = __webpack_require__(5278);
-const os = __importStar(__webpack_require__(2087));
-const path = __importStar(__webpack_require__(5622));
+const command_1 = __nccwpck_require__(7351);
+const file_command_1 = __nccwpck_require__(717);
+const utils_1 = __nccwpck_require__(5278);
+const os = __importStar(__nccwpck_require__(2087));
+const path = __importStar(__nccwpck_require__(5622));
 /**
  * The code to exit an action
  */
@@ -609,7 +623,7 @@ exports.getState = getState;
 /***/ }),
 
 /***/ 717:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -624,9 +638,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const fs = __importStar(__webpack_require__(5747));
-const os = __importStar(__webpack_require__(2087));
-const utils_1 = __webpack_require__(5278);
+const fs = __importStar(__nccwpck_require__(5747));
+const os = __importStar(__nccwpck_require__(2087));
+const utils_1 = __nccwpck_require__(5278);
 function issueCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
     if (!filePath) {
@@ -671,14 +685,14 @@ exports.toCommandValue = toCommandValue;
 /***/ }),
 
 /***/ 8049:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-__webpack_require__(74);
-const inherits = __webpack_require__(1669).inherits;
-const promisify = __webpack_require__(7525);
-const EventEmitter = __webpack_require__(8614).EventEmitter;
+__nccwpck_require__(74);
+const inherits = __nccwpck_require__(1669).inherits;
+const promisify = __nccwpck_require__(7525);
+const EventEmitter = __nccwpck_require__(8614).EventEmitter;
 
 module.exports = Agent;
 
@@ -849,12 +863,12 @@ Agent.prototype.freeSocket = function freeSocket(socket, opts) {
 /***/ }),
 
 /***/ 74:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-const url = __webpack_require__(8835);
-const https = __webpack_require__(7211);
+const url = __nccwpck_require__(8835);
+const https = __nccwpck_require__(7211);
 
 /**
  * This currently needs to be applied to all Node.js versions
@@ -1081,7 +1095,7 @@ module.exports = Error.captureStackTrace || function (error) {
 /***/ }),
 
 /***/ 5277:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1093,27 +1107,27 @@ module.exports = Error.captureStackTrace || function (error) {
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Client = __webpack_require__(3549);
-const proxy = __webpack_require__(2601);
+const Client = __nccwpck_require__(3549);
+const proxy = __nccwpck_require__(2601);
 
 /* eslint-disable global-require */
 const resources = {
-  dnsRecords: __webpack_require__(562),
-  enterpriseZoneWorkersScripts: __webpack_require__(3310),
-  enterpriseZoneWorkersRoutes: __webpack_require__(6793),
-  enterpriseZoneWorkersKVNamespaces: __webpack_require__(6391),
-  enterpriseZoneWorkersKV: __webpack_require__(3607),
-  ips: __webpack_require__(3061),
-  zones: __webpack_require__(8074),
-  zoneSettings: __webpack_require__(4383),
-  zoneCustomHostNames: __webpack_require__(5150),
-  zoneWorkers: __webpack_require__(8908),
-  zoneWorkersScript: __webpack_require__(3142),
-  zoneWorkersRoutes: __webpack_require__(5069),
-  user: __webpack_require__(2643),
+  dnsRecords: __nccwpck_require__(562),
+  enterpriseZoneWorkersScripts: __nccwpck_require__(3310),
+  enterpriseZoneWorkersRoutes: __nccwpck_require__(6793),
+  enterpriseZoneWorkersKVNamespaces: __nccwpck_require__(6391),
+  enterpriseZoneWorkersKV: __nccwpck_require__(3607),
+  ips: __nccwpck_require__(3061),
+  zones: __nccwpck_require__(8074),
+  zoneSettings: __nccwpck_require__(4383),
+  zoneCustomHostNames: __nccwpck_require__(5150),
+  zoneWorkers: __nccwpck_require__(8908),
+  zoneWorkersScript: __nccwpck_require__(3142),
+  zoneWorkersRoutes: __nccwpck_require__(5069),
+  user: __nccwpck_require__(2643),
 };
 /* eslint-enable global-require */
 
@@ -1196,7 +1210,7 @@ module.exports = Cloudflare;
 /***/ }),
 
 /***/ 3549:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1208,9 +1222,9 @@ module.exports = Cloudflare;
 
 
 
-const prototypal = __webpack_require__(8931);
-const pkg = __webpack_require__(8615);
-const Getter = __webpack_require__(6277);
+const prototypal = __nccwpck_require__(8931);
+const pkg = __nccwpck_require__(8615);
+const Getter = __nccwpck_require__(6277);
 
 const USER_AGENT = JSON.stringify({
   bindings_version: pkg.version, // eslint-disable-line camelcase
@@ -1291,7 +1305,7 @@ module.exports = prototypal({
 /***/ }),
 
 /***/ 6277:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1303,9 +1317,9 @@ module.exports = prototypal({
 
 
 
-const prototypal = __webpack_require__(8931);
-const assign = __webpack_require__(7426);
-const got = __webpack_require__(3798);
+const prototypal = __nccwpck_require__(8931);
+const assign = __nccwpck_require__(7426);
+const got = __nccwpck_require__(3798);
 
 module.exports = prototypal({
   constructor: function constructor(options) {
@@ -1323,7 +1337,7 @@ module.exports = prototypal({
 /***/ }),
 
 /***/ 1935:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1335,8 +1349,8 @@ module.exports = prototypal({
 
 
 
-const prototypal = __webpack_require__(8931);
-const method = __webpack_require__(5033);
+const prototypal = __nccwpck_require__(8931);
+const method = __nccwpck_require__(5033);
 
 const BASIC_METHODS = {
   browse: method({
@@ -1404,7 +1418,7 @@ module.exports = prototypal(
 /***/ }),
 
 /***/ 5033:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1416,7 +1430,7 @@ module.exports = prototypal(
 
 
 
-const URLPattern = __webpack_require__(8549);
+const URLPattern = __nccwpck_require__(8549);
 
 const options = ['key', 'email', 'token'];
 
@@ -1563,7 +1577,7 @@ module.exports = function(spec) {
 /***/ }),
 
 /***/ 2601:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1575,8 +1589,8 @@ module.exports = function(spec) {
 
 
 
-const shouldProxy = __webpack_require__(5882);
-const HttpsProxyAgent = __webpack_require__(3436);
+const shouldProxy = __nccwpck_require__(5882);
+const HttpsProxyAgent = __nccwpck_require__(3436);
 
 /**
  * proxyAgent returns an HTTPS agent to use to access the base URL.
@@ -1610,7 +1624,7 @@ module.exports.proxyAgent = proxyAgent;
 /***/ }),
 
 /***/ 562:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1622,11 +1636,11 @@ module.exports.proxyAgent = proxyAgent;
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * DNSRecords represents the /zones/:zoneID/dns_records API endpoint.
@@ -1725,7 +1739,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 3607:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1737,11 +1751,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * EnterpriseZoneWorkersKV represents the accounts/:accountId/storage/kv/namespaces API endpoint.
@@ -1859,7 +1873,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 6391:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1871,11 +1885,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * EnterpriseZoneWorkersKVNamespaces represents the accounts/:accountId/storage/kv/namespaces API endpoint.
@@ -1946,7 +1960,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 6793:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -1958,11 +1972,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * EnterpriseZoneWorkersRoutes represents the zones/:zoneId/workers/routes API endpoint.
@@ -2044,7 +2058,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 3310:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2056,11 +2070,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * EnterpriseZoneWorkersScripts represents the accounts/:accountId/workers/scripts API endpoint.
@@ -2140,7 +2154,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 3061:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2152,10 +2166,10 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
+const Resource = __nccwpck_require__(1935);
 
 /**
  * IPs represents the /ips API endpoint.
@@ -2190,7 +2204,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 2643:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2202,11 +2216,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * User represents the /user API endpoint.
@@ -2253,7 +2267,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 5150:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2265,10 +2279,10 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
+const Resource = __nccwpck_require__(1935);
 
 /**
  * ZoneCustomHostNames represents the /zones/:zoneID/custom_hostnames API endpoint.
@@ -2346,7 +2360,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 4383:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2358,11 +2372,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * ZoneSettings represents the /zones/:zoneID/settings API endpoint.
@@ -2433,7 +2447,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 8908:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2445,11 +2459,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * ZoneWorkers represents the /zones/:zoneId/workers API endpoint.
@@ -2486,7 +2500,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 5069:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2498,11 +2512,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * ZoneWorkersRoutes represents the zones/:zoneId/workers/filters API endpoint.
@@ -2585,7 +2599,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 3142:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2597,11 +2611,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * ZoneWorkersScript represents the /zones/:zoneID/workers/script API endpoint.
@@ -2665,7 +2679,7 @@ module.exports = auto(
 /***/ }),
 
 /***/ 8074:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*
@@ -2677,11 +2691,11 @@ module.exports = auto(
 
 
 
-const prototypal = __webpack_require__(8931);
-const auto = __webpack_require__(8511);
+const prototypal = __nccwpck_require__(8931);
+const auto = __nccwpck_require__(8511);
 
-const Resource = __webpack_require__(1935);
-const method = __webpack_require__(5033);
+const Resource = __nccwpck_require__(1935);
+const method = __nccwpck_require__(5033);
 
 /**
  * Zones represents the /zones API endpoint.
@@ -2789,11 +2803,11 @@ module.exports = auto(
 /***/ }),
 
 /***/ 4532:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-var captureStackTrace = __webpack_require__(6582);
+var captureStackTrace = __nccwpck_require__(6582);
 
 function inherits(ctor, superCtor) {
 	ctor.super_ = superCtor;
@@ -2841,7 +2855,7 @@ module.exports = function createErrorClass(className, setup) {
 /***/ }),
 
 /***/ 2437:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 /* @flow */
 /*::
@@ -2866,8 +2880,8 @@ type DotenvConfigOutput = {
 
 */
 
-const fs = __webpack_require__(5747)
-const path = __webpack_require__(5622)
+const fs = __nccwpck_require__(5747)
+const path = __nccwpck_require__(5622)
 
 function log (message /*: string */) {
   console.log(`[dotenv][DEBUG] ${message}`)
@@ -2961,12 +2975,12 @@ module.exports.parse = parse
 /***/ }),
 
 /***/ 7994:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-var stream = __webpack_require__(2413);
+var stream = __nccwpck_require__(2413);
 
 function DuplexWrapper(options, writable, readable) {
   if (typeof readable === "undefined") {
@@ -4839,7 +4853,7 @@ return Promise$1;
 /***/ }),
 
 /***/ 1023:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -4913,13 +4927,13 @@ module.exports = function () {
     }
 
     //  Otherwise, return the es6-promise polyfill by @jaffathecake.
-    return __webpack_require__(8878).Promise;
+    return __nccwpck_require__(8878).Promise;
 }();
 
 /***/ }),
 
 /***/ 7525:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -4931,7 +4945,7 @@ module.exports = function () {
 
     // Get a promise object. This may be native, or it may be polyfilled
 
-    var ES6Promise = __webpack_require__(1023);
+    var ES6Promise = __nccwpck_require__(1023);
 
     /**
      * thatLooksLikeAPromiseToMe()
@@ -5269,11 +5283,11 @@ exports.bindTo_ = bindTo_;
 /***/ }),
 
 /***/ 1585:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-const PassThrough = __webpack_require__(2413).PassThrough;
+const PassThrough = __nccwpck_require__(2413).PassThrough;
 
 module.exports = opts => {
 	opts = Object.assign({}, opts);
@@ -5328,11 +5342,11 @@ module.exports = opts => {
 /***/ }),
 
 /***/ 1766:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-const bufferStream = __webpack_require__(1585);
+const bufferStream = __nccwpck_require__(1585);
 
 function getStream(inputStream, opts) {
 	if (!inputStream) {
@@ -5387,28 +5401,28 @@ module.exports.array = (stream, opts) => getStream(stream, Object.assign({}, opt
 /***/ }),
 
 /***/ 3798:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-const EventEmitter = __webpack_require__(8614);
-const http = __webpack_require__(8605);
-const https = __webpack_require__(7211);
-const PassThrough = __webpack_require__(2413).PassThrough;
-const urlLib = __webpack_require__(8835);
-const querystring = __webpack_require__(1191);
-const duplexer3 = __webpack_require__(7994);
-const isStream = __webpack_require__(1554);
-const getStream = __webpack_require__(1766);
-const timedOut = __webpack_require__(9478);
-const urlParseLax = __webpack_require__(3194);
-const lowercaseKeys = __webpack_require__(9662);
-const isRedirect = __webpack_require__(4409);
-const unzipResponse = __webpack_require__(9428);
-const createErrorClass = __webpack_require__(4532);
-const isRetryAllowed = __webpack_require__(841);
-const Buffer = __webpack_require__(1867).Buffer;
-const pkg = __webpack_require__(9248);
+const EventEmitter = __nccwpck_require__(8614);
+const http = __nccwpck_require__(8605);
+const https = __nccwpck_require__(7211);
+const PassThrough = __nccwpck_require__(2413).PassThrough;
+const urlLib = __nccwpck_require__(8835);
+const querystring = __nccwpck_require__(1191);
+const duplexer3 = __nccwpck_require__(7994);
+const isStream = __nccwpck_require__(1554);
+const getStream = __nccwpck_require__(1766);
+const timedOut = __nccwpck_require__(9478);
+const urlParseLax = __nccwpck_require__(3194);
+const lowercaseKeys = __nccwpck_require__(9662);
+const isRedirect = __nccwpck_require__(4409);
+const unzipResponse = __nccwpck_require__(9428);
+const createErrorClass = __nccwpck_require__(4532);
+const isRetryAllowed = __nccwpck_require__(841);
+const Buffer = __nccwpck_require__(1867).Buffer;
+const pkg = __nccwpck_require__(9248);
 
 function requestAsEventEmitter(opts) {
 	opts = opts || {};
@@ -5775,13 +5789,13 @@ module.exports = (flag, argv = process.argv) => {
 /***/ }),
 
 /***/ 3038:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /* Hjson https://hjson.github.io */
 
 
-var common=__webpack_require__(5573);
+var common=__nccwpck_require__(5573);
 
 function makeComment(b, a, x) {
   var c;
@@ -5985,13 +5999,13 @@ module.exports={
 /***/ }),
 
 /***/ 5573:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /* Hjson https://hjson.github.io */
 
 
-var os=__webpack_require__(2087); // will be {} when used in a browser
+var os=__nccwpck_require__(2087); // will be {} when used in a browser
 
 function tryParseNumber(text, stopAtNext) {
 
@@ -6236,7 +6250,7 @@ module.exports = {
 /***/ }),
 
 /***/ 5269:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /* Hjson https://hjson.github.io */
@@ -6244,8 +6258,8 @@ module.exports = {
 
 module.exports = function(source, opt) {
 
-  var common = __webpack_require__(5573);
-  var dsf = __webpack_require__(8042);
+  var common = __nccwpck_require__(5573);
+  var dsf = __nccwpck_require__(8042);
 
   var text;
   var at;   // The index of the current character
@@ -6699,7 +6713,7 @@ module.exports = function(source, opt) {
 /***/ }),
 
 /***/ 8712:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /* Hjson https://hjson.github.io */
@@ -6707,8 +6721,8 @@ module.exports = function(source, opt) {
 
 module.exports = function(data, opt) {
 
-  var common = __webpack_require__(5573);
-  var dsf = __webpack_require__(8042);
+  var common = __nccwpck_require__(5573);
+  var dsf = __nccwpck_require__(8042);
 
   var plainToken = {
     obj:  [ '{', '}' ],
@@ -7115,7 +7129,7 @@ module.exports="3.2.1";
 /***/ }),
 
 /***/ 24:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 /*!
@@ -7265,12 +7279,12 @@ module.exports="3.2.1";
 
 
 
-var common = __webpack_require__(5573);
-var version = __webpack_require__(8053);
-var parse = __webpack_require__(5269);
-var stringify = __webpack_require__(8712);
-var comments = __webpack_require__(3038);
-var dsf = __webpack_require__(8042);
+var common = __nccwpck_require__(5573);
+var version = __nccwpck_require__(8053);
+var parse = __nccwpck_require__(5269);
+var stringify = __nccwpck_require__(8712);
+var comments = __nccwpck_require__(3038);
+var dsf = __nccwpck_require__(8042);
 
 module.exports={
 
@@ -7306,19 +7320,19 @@ module.exports={
 /***/ }),
 
 /***/ 3436:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 /**
  * Module dependencies.
  */
 
-var net = __webpack_require__(1631);
-var tls = __webpack_require__(4016);
-var url = __webpack_require__(8835);
-var assert = __webpack_require__(2357);
-var Agent = __webpack_require__(8049);
-var inherits = __webpack_require__(1669).inherits;
-var debug = __webpack_require__(6785)('https-proxy-agent');
+var net = __nccwpck_require__(1631);
+var tls = __nccwpck_require__(4016);
+var url = __nccwpck_require__(8835);
+var assert = __nccwpck_require__(2357);
+var Agent = __nccwpck_require__(8049);
+var inherits = __nccwpck_require__(1669).inherits;
+var debug = __nccwpck_require__(6785)('https-proxy-agent');
 
 /**
  * Module exports.
@@ -7554,7 +7568,7 @@ function isDefaultPort(port, secure) {
 /***/ }),
 
 /***/ 814:
-/***/ ((module, exports, __webpack_require__) => {
+/***/ ((module, exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -7723,7 +7737,7 @@ function localstorage() {
   }
 }
 
-module.exports = __webpack_require__(6127)(exports);
+module.exports = __nccwpck_require__(6127)(exports);
 var formatters = module.exports.formatters;
 /**
  * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
@@ -7742,7 +7756,7 @@ formatters.j = function (v) {
 /***/ }),
 
 /***/ 6127:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -7758,7 +7772,7 @@ function setup(env) {
   createDebug.disable = disable;
   createDebug.enable = enable;
   createDebug.enabled = enabled;
-  createDebug.humanize = __webpack_require__(1732);
+  createDebug.humanize = __nccwpck_require__(1732);
   Object.keys(env).forEach(function (key) {
     createDebug[key] = env[key];
   });
@@ -7999,7 +8013,7 @@ module.exports = setup;
 /***/ }),
 
 /***/ 6785:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -8009,9 +8023,9 @@ module.exports = setup;
  * treat as a browser.
  */
 if (typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs) {
-  module.exports = __webpack_require__(814);
+  module.exports = __nccwpck_require__(814);
 } else {
-  module.exports = __webpack_require__(9559);
+  module.exports = __nccwpck_require__(9559);
 }
 
 
@@ -8019,7 +8033,7 @@ if (typeof process === 'undefined' || process.type === 'renderer' || process.bro
 /***/ }),
 
 /***/ 9559:
-/***/ ((module, exports, __webpack_require__) => {
+/***/ ((module, exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -8027,9 +8041,9 @@ if (typeof process === 'undefined' || process.type === 'renderer' || process.bro
 /**
  * Module dependencies.
  */
-var tty = __webpack_require__(3867);
+var tty = __nccwpck_require__(3867);
 
-var util = __webpack_require__(1669);
+var util = __nccwpck_require__(1669);
 /**
  * This is the Node.js implementation of `debug()`.
  */
@@ -8050,7 +8064,7 @@ exports.colors = [6, 2, 3, 4, 5, 1];
 try {
   // Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
   // eslint-disable-next-line import/no-extraneous-dependencies
-  var supportsColor = __webpack_require__(9318);
+  var supportsColor = __nccwpck_require__(9318);
 
   if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
     exports.colors = [20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62, 63, 68, 69, 74, 75, 76, 77, 78, 79, 80, 81, 92, 93, 98, 99, 112, 113, 128, 129, 134, 135, 148, 149, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 178, 179, 184, 185, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 214, 215, 220, 221];
@@ -8176,7 +8190,7 @@ function init(debug) {
   }
 }
 
-module.exports = __webpack_require__(6127)(exports);
+module.exports = __nccwpck_require__(6127)(exports);
 var formatters = module.exports.formatters;
 /**
  * Map %o to `util.inspect()`, all on a single line.
@@ -8633,11 +8647,11 @@ module.exports = function (url) {
 /***/ }),
 
 /***/ 1867:
-/***/ ((module, exports, __webpack_require__) => {
+/***/ ((module, exports, __nccwpck_require__) => {
 
 /*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 /* eslint-disable node/no-deprecated-api */
-var buffer = __webpack_require__(4293)
+var buffer = __nccwpck_require__(4293)
 var Buffer = buffer.Buffer
 
 // alternative to using Object.keys for old browsers
@@ -8705,9 +8719,9 @@ SafeBuffer.allocUnsafeSlow = function (size) {
 /***/ }),
 
 /***/ 5882:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-var url = __webpack_require__(8835);
+var url = __nccwpck_require__(8835);
 
 function matchDomain(hostname, no_proxy) {
   var hostnameArray = hostname.split(".");
@@ -8847,13 +8861,13 @@ module.exports = shouldProxy;
 /***/ }),
 
 /***/ 9318:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-const os = __webpack_require__(2087);
-const tty = __webpack_require__(3867);
-const hasFlag = __webpack_require__(1621);
+const os = __nccwpck_require__(2087);
+const tty = __nccwpck_require__(3867);
+const hasFlag = __nccwpck_require__(1621);
 
 const {env} = process;
 
@@ -9053,12 +9067,12 @@ module.exports = function (req, time) {
 /***/ }),
 
 /***/ 9428:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-const PassThrough = __webpack_require__(2413).PassThrough;
-const zlib = __webpack_require__(8761);
+const PassThrough = __nccwpck_require__(2413).PassThrough;
+const zlib = __nccwpck_require__(8761);
 
 module.exports = res => {
 	// TODO: use Array#includes when targeting Node.js 6
@@ -9097,12 +9111,12 @@ module.exports = res => {
 /***/ }),
 
 /***/ 3194:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-var url = __webpack_require__(8835);
-var prependHttp = __webpack_require__(6143);
+var url = __nccwpck_require__(8835);
+var prependHttp = __nccwpck_require__(6143);
 
 module.exports = function (x) {
 	var withProtocol = prependHttp(x);
@@ -9719,7 +9733,7 @@ module.exports = require("zlib");;
 /******/ 	var __webpack_module_cache__ = {};
 /******/ 	
 /******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
+/******/ 	function __nccwpck_require__(moduleId) {
 /******/ 		// Check if module is in cache
 /******/ 		if(__webpack_module_cache__[moduleId]) {
 /******/ 			return __webpack_module_cache__[moduleId].exports;
@@ -9734,7 +9748,7 @@ module.exports = require("zlib");;
 /******/ 		// Execute the module function
 /******/ 		var threw = true;
 /******/ 		try {
-/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
 /******/ 			threw = false;
 /******/ 		} finally {
 /******/ 			if(threw) delete __webpack_module_cache__[moduleId];
@@ -9747,11 +9761,11 @@ module.exports = require("zlib");;
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	__webpack_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	__nccwpck_require__.ab = __dirname + "/";/************************************************************************/
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(4063);
+/******/ 	return __nccwpck_require__(4063);
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map
