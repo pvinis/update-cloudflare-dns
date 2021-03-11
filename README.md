@@ -20,3 +20,5 @@ with:
 //// put warninmg when there is a newer version of the action out. maybe with a flag "dont notify me of new versions"?
 
 //blog about this action and how i use it
+
+<!-- add link to buy me coffee -->
