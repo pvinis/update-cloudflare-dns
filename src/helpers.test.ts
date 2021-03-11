@@ -60,14 +60,24 @@ describe(sameRecord, () => {
 		)).toBe(false)
 
 		expect(sameRecord({
-		  id: '4a5dd05d8731962f547eb954e164c49f',
-		  zone_name: 'xn--t9j.co',
-		  name: 'mail.xn--t9j.co',
-		  type: 'AAAA',
-		  content: '684d:1111:222:3333:4444:5555:6:77',
-		  proxied: true,
+			id: '4a5dd05d8731962f547eb954e164c49f',
+			zone_name: 'mydomain.com',
+			name: 'mail.mydomain.com',
+			type: 'AAAA',
+			content: '684d:1111:222:3333:4444:5555:6:77',
+			proxied: true,
 		},
 		{ type: 'AAAA', name: 'mail', ipv6: '684D:1111:222:3333:4444:5555:6:77' }))
+			.toBe(true)
+
+		expect(sameRecord(mockRemoteRecord({
+			zone_name: 'mydomain.com',
+			name: 'mail.mydomain.com',
+			type: 'MX',
+			content: 'some.email.com',
+			priority: 20,
+		}),
+		{ type: 'MX', name: 'mail', mailServer: 'some.email.com', priority: 20 }))
 			.toBe(true)
 	})
 })
@@ -90,11 +100,9 @@ describe(printRemoteRecord, () => {
 	})
 
 	it('also prints in full', () => {
-		expect(printRemoteRecord(mockRemoteRecord({
-			type: 'A',
-			name: 'mail.mydomain.com',
-			content: '11.22.33.44',
-		}), true))
+		expect(printRemoteRecord(mockRemoteRecord(
+			{ type: 'A', name: 'mail.mydomain.com', content: '11.22.33.44' }
+		), true))
 			.toBe('mail.mydomain.com.	1	IN	A	11.22.33.44')
 		expect(printRemoteRecord(mockRemoteRecord({
 			type: 'A',
@@ -102,6 +110,9 @@ describe(printRemoteRecord, () => {
 			content: '11.22.33.44',
 		}), true))
 			.toBe('mydomain.com.	1	IN	A	11.22.33.44')
+		expect(printRemoteRecord(mockRemoteRecord(
+			{ type: 'MX', name: 'mail.mydomain.com', priority: 20, content: 'some.email.com' }
+		), true)).toBe('mail.mydomain.com.	1	IN	MX	20 some.email.com.')
 	})
 })
 
@@ -125,6 +136,12 @@ describe(printConfigRecord, () => {
 			content: 'wow=pavlos',
 		}, 'mydomain.com'))
 			.toBe('@	1	IN	TXT	"wow=pavlos"')
+		expect(printConfigRecord({
+			type: 'MX',
+			name: 'mail',
+			mailServer: 'some.email.com',
+			priority: 20,
+		}, 'mydomain.com')).toBe('mail	1	IN	MX	20 some.email.com.')
 	})
 
 	it('also prints in full', () => {
@@ -140,6 +157,12 @@ describe(printConfigRecord, () => {
 			ipv4: '11.22.33.44',
 		}, 'mydomain.com', true))
 			.toBe('mydomain.com.	1	IN	A	11.22.33.44')
+		expect(printConfigRecord({
+			type: 'MX',
+			name: 'mail',
+			mailServer: 'some.email.com',
+			priority: 20,
+		}, 'mydomain.com')).toBe('mail.mydomain.com.	1	IN	MX	20 some.email.com.')
 	})
 })
 
@@ -155,52 +178,52 @@ describe(partitionRecords, () => {
 	it('really works', () => {
 		const remote: RemoteRecord[] = [
 			{
-		  id: '01c3919a0ebb1621813aa583b2916e3e',
-		  zone_name: 'xn--t9j.co',
-		  name: 'mail.xn--t9j.co',
-		  type: 'A',
-		  content: '11.22.33.44',
-		  proxied: true,
+				id: '01c3919a0ebb1621813aa583b2916e3e',
+				zone_name: 'mydomain.com',
+				name: 'mail.mydomain.com',
+				type: 'A',
+				content: '11.22.33.44',
+				proxied: true,
 			},
 			{
-		  id: '4877b96db259761439a1f4b15d9393d2',
-		  zone_name: 'xn--t9j.co',
-		  name: 'xn--t9j.co',
-		  type: 'A',
-		  content: '11.22.33.44',
-		  proxied: false,
+				id: '4877b96db259761439a1f4b15d9393d2',
+				zone_name: 'mydomain.com',
+				name: 'mydomain.com',
+				type: 'A',
+				content: '11.22.33.44',
+				proxied: false,
 			},
 			{
-		  id: '4a5dd05d8731962f547eb954e164c49f',
-		  zone_name: 'xn--t9j.co',
-		  name: 'mail.xn--t9j.co',
-		  type: 'AAAA',
-		  content: '684d:1111:222:3333:4444:5555:6:77',
-		  proxied: true,
+				id: '4a5dd05d8731962f547eb954e164c49f',
+				zone_name: 'mydomain.com',
+				name: 'mail.mydomain.com',
+				type: 'AAAA',
+				content: '684d:1111:222:3333:4444:5555:6:77',
+				proxied: true,
 			},
 			{
-		  id: '7462e86c44e00149390c203f2a62dcb6',
-		  zone_name: 'xn--t9j.co',
-		  name: 'xn--t9j.co',
-		  type: 'AAAA',
-		  content: '684d:1111:222:3333:4444:5555:6:77',
-		  proxied: false,
+				id: '7462e86c44e00149390c203f2a62dcb6',
+				zone_name: 'mydomain.com',
+				name: 'mydomain.com',
+				type: 'AAAA',
+				content: '684d:1111:222:3333:4444:5555:6:77',
+				proxied: false,
 			},
 			{
-		  id: '22bfae39722e0ffd988a38fd0359987b',
-		  zone_name: 'xn--t9j.co',
-		  name: '_sub.xn--t9j.co',
-		  type: 'TXT',
-		  content: 'some-key-verification=value ?huh -thats cool!',
-		  proxied: false,
+				id: '22bfae39722e0ffd988a38fd0359987b',
+				zone_name: 'mydomain.com',
+				name: '_sub.mydomain.com',
+				type: 'TXT',
+				content: 'some-key-verification=value ?huh -thats cool!',
+				proxied: false,
 			},
 			{
-		  id: 'ee023820a9ee231a33aa33259b0ee8f5',
-		  zone_name: 'xn--t9j.co',
-		  name: 'xn--t9j.co',
-		  type: 'TXT',
-		  content: 'Something else',
-		  proxied: false,
+				id: 'ee023820a9ee231a33aa33259b0ee8f5',
+				zone_name: 'mydomain.com',
+				name: 'mydomain.com',
+				type: 'TXT',
+				content: 'Something else',
+				proxied: false,
 			},
 		]
 

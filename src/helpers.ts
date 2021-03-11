@@ -28,11 +28,32 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 		if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
 		break
 
+		// case "CNAME":
+		// case "HTTPS":
 
 	case 'TXT':
 		if (remoteRecord.content !== configRecord.content) return false
 		break
 
+		// case "SRV":
+		// case "LOC":
+		//
+	case 'MX':
+		if (remoteRecord.content !== configRecord.mailServer) return false
+		if (remoteRecord.priority !== configRecord.priority) return false
+		break
+
+		// case "NS":
+		// case "SPF":
+		// case "CERT":
+		// case "DNSKEY":
+		// case "DS":
+		// case "NAPTR":
+		// case "SMIMEA":
+		// case "SSHFP":
+		// case "SVCB":
+		// case "TLSA":
+		// case "URI read only":
 
 	default: absurd(configRecord)
 	}
@@ -46,6 +67,7 @@ export const recordContent = (record: ConfigRecord): string => {
 	case 'A': return record.ipv4
 	case 'AAAA': return record.ipv6
 	case 'TXT': return record.content
+	case 'MX': return record.mailServer
 	}
 	absurd(record)
 }
@@ -63,8 +85,14 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 	}.`
 	const name = full ? fullName : record.name
 	let content = recordContent(record)
-	if (record.type === 'TXT') {
+	switch(record.type) {
+	case 'TXT':
 		content = `"${content}"`
+		break
+	case 'MX':
+		content = `${content}.`
+		break
+	default: break
 	}
 	return `${name}\t1\tIN\t${record.type}\t${content}`
 }
@@ -79,7 +107,7 @@ export const inputOrEnv = (inputName: string, envName: string) => {
 }
 
 
-export const partitionRecords = <T, U>(remote: T[], local: U[], comparator: (a: T, b:U)=> boolean): {toBeDeleted: T[], toBeKept:T[], toBeAdded:U[]} => {
+export const partitionRecords = <T, U>(remote: T[], local: U[], comparator: (_a: T, _b: U)=> boolean): {toBeDeleted: T[], toBeKept:T[], toBeAdded:U[]} => {
 	const toBeDeleted = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) === -1)
 	const toBeKept = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) !== -1)
 	const toBeAdded = local.filter(rec => remote.findIndex(possiblySameRec => comparator(possiblySameRec, rec)) === -1)

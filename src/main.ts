@@ -1,13 +1,13 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
+// import * as github from '@actions/github'
 import { exit } from 'process'
 import HJSON from 'hjson'
 import fs from 'fs'
 import Cloudflare from 'cloudflare'
 import { absurd } from 'fp-ts/lib/function'
 
-import { inputOrEnv, niceRecordName, partitionRecords, printConfigRecord, printRemoteRecord, recordContent, sameRecord } from './helpers'
-import { Config, ConfigRecord, RemoteRecord } from './types'
+import { inputOrEnv, partitionRecords, printConfigRecord, printRemoteRecord, recordContent, sameRecord } from './helpers'
+import { Config, RemoteRecord } from './types'
 
 
 require('dotenv').config()
@@ -20,6 +20,11 @@ const main = async () => {
 		core.setFailed('Zone not set.')
 		exit(-1)
 	}
+	//   const time = (new Date()).toTimeString();
+	///   core.setOutput("time", time);
+	// Get the JSON webhook payload for the event that triggered the workflow
+	//   const payload = JSON.stringify(github.context.payload, undefined, 2)
+	//   console.log(`The event payload: ${payload}`);
 
 
 	const TOKEN = inputOrEnv('cloudflareToken', 'CLOUDFLARE_TOKEN')
@@ -120,7 +125,13 @@ const main = async () => {
 	}))
 
 
+	// make sure it errors out if something is missing
+	// add some tests for niceName, sameRec
+	// make typescript
+	// make sure to allow for DNS only or cached
 
 }
 main()
 
+
+// make into a github action, And make this repo into a template with just a hjson and the github action and env setup
