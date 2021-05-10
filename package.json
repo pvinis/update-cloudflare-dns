@@ -16,7 +16,7 @@
     "@actions/core": "1.2.6",
     "@actions/github": "4.0.0",
     "cloudflare": "2.7.0",
-    "dotenv": "8.2.0",
+    "dotenv": "9.0.2",
     "fp-ts": "2.9.5",
     "hjson": "3.2.2"
   },
