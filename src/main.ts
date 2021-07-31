@@ -7,9 +7,9 @@ import Cloudflare from 'cloudflare'
 import { absurd } from 'fp-ts/lib/function'
 
 import { inputOrEnv, partitionRecords, printConfigRecord, printRemoteRecord, recordContent, sameRecord } from './helpers'
-import { Config, RemoteRecord } from './types'
+import { Config } from './types'
 
-
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config()
 
 
@@ -49,7 +49,7 @@ const main = async () => {
 	// Find the right zone
 	let zoneId = ''
 	try {
-		const response = await cf.zones.browse() as any
+		const response = await cf.zones.browse()
 		const zones: Zone[] = response.result
 		const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id)
 		if (theZones.length === 0) {

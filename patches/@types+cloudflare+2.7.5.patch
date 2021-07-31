@@ -1,12 +1,14 @@
 diff --git a/node_modules/@types/cloudflare/index.d.ts b/node_modules/@types/cloudflare/index.d.ts
-index 515f398..7976254 100755
+index 515f398..cec04c0 100755
 --- a/node_modules/@types/cloudflare/index.d.ts
 +++ b/node_modules/@types/cloudflare/index.d.ts
-@@ -5,15 +5,13 @@
+@@ -5,15 +5,15 @@
  // Minimum TypeScript Version: 3.3
  
  declare namespace Cloudflare {
 -    type RecordTypes =
++    type ResponseObjectPromise = Promise<object>;
++
 +    type RecordTypesWithoutPriority =
          | "A"
          | "AAAA"
@@ -19,7 +21,7 @@ index 515f398..7976254 100755
          | "NS"
          | "SPF"
          | "CERT"
-@@ -23,10 +21,31 @@ declare namespace Cloudflare {
+@@ -23,10 +23,32 @@ declare namespace Cloudflare {
          | "SMIMEA"
          | "SSHFP"
          | "SVCB"
@@ -30,7 +32,8 @@ index 515f398..7976254 100755
 +        | "MX"
          | "URI read only";
 +	type RecordTypes = RecordTypesWithoutPriority | RecordTypesWithPriority;
-+
+ 
+-    type ResponseObjectPromise = Promise<object>;
 +    export interface RemoteRecord {
 +        id: string;
 +        zone_id: string;
@@ -47,13 +50,13 @@ index 515f398..7976254 100755
 +        created_on: string;
 +        modified_on: string;
 +    }
- 
--    type ResponseObjectPromise = Promise<object>;
-+    type ResponseObjectPromise = Promise<{result: RemoteRecord[]}>;
++
++    type ResponseRecordPromise = Promise<{result: RemoteRecord}>;
++    type ResponseRecordsPromise = Promise<{result: RemoteRecord[]}>;
  
      interface AuthObject {
          email?: string | undefined;
-@@ -35,7 +54,7 @@ declare namespace Cloudflare {
+@@ -35,7 +57,7 @@ declare namespace Cloudflare {
      }
  
      interface DnsRecordWithoutPriority {
@@ -62,7 +65,7 @@ index 515f398..7976254 100755
          name: string;
          content: string;
          ttl: number;
-@@ -43,7 +62,7 @@ declare namespace Cloudflare {
+@@ -43,7 +65,7 @@ declare namespace Cloudflare {
      }
  
      interface DnsRecordWithPriority {
@@ -71,26 +74,27 @@ index 515f398..7976254 100755
          name: string;
          content: string;
          ttl: number;
-@@ -73,15 +92,15 @@ declare namespace Cloudflare {
+@@ -73,15 +95,15 @@ declare namespace Cloudflare {
              zone_id: string,
              id: string,
              record: DnsRecord,
 -        ): ResponseObjectPromise;
 -        browse(zone_id: string): ResponseObjectPromise;
-+        ): Promise<RemoteRecord[]>;
-+        browse(zone_id: string): Promise<RemoteRecord[]>;
++        ): ResponseRecordPromise;
++        browse(zone_id: string): ResponseRecordsPromise;
          export(zone_id: string): ResponseObjectPromise;
          del(zone_id: string, id: string): ResponseObjectPromise;
-         read(zone_id: string, id: string): ResponseObjectPromise;
+-        read(zone_id: string, id: string): ResponseObjectPromise;
++        read(zone_id: string, id: string): ResponseRecordPromise;
          add(
              zone_id: string,
              record: DnsRecord,
 -        ): ResponseObjectPromise;
-+        ): Promise<RemoteRecord[]>;
++        ): ResponseRecordPromise;
      }
  
      interface EnterpriseZoneWorkerScripts {
-@@ -170,6 +189,11 @@ declare namespace Cloudflare {
+@@ -170,6 +192,14 @@ declare namespace Cloudflare {
          read(id: string): ResponseObjectPromise;
      }
  
@@ -99,33 +103,38 @@ index 515f398..7976254 100755
 +        id: string;
 +	}
 +
++    type ResponseZonePromise = Promise<{result: RemoteZone}>;
++    type ResponseZonesPromise = Promise<{result: RemoteZone[]}>;
++
      interface Zones {
          activationCheck(id: string): ResponseObjectPromise;
          del(id: string): ResponseObjectPromise;
-@@ -178,7 +202,7 @@ declare namespace Cloudflare {
+@@ -178,7 +208,7 @@ declare namespace Cloudflare {
              action: { id: string };
              jump_start?: boolean | undefined;
              type?: "full" | "partial" | undefined;
 -        }): ResponseObjectPromise;
-+        }): Promise<RemoteZone[]>;
++        }): ResponseZonePromise;
          edit(
              id: string,
              zone: {
-@@ -187,7 +211,7 @@ declare namespace Cloudflare {
+@@ -187,8 +217,8 @@ declare namespace Cloudflare {
                  jump_start?: boolean | undefined;
                  type?: "full" | "partial" | undefined;
              },
 -        ): ResponseObjectPromise;
-+        ): Promise<RemoteZone[]>;
-         read(id: string): ResponseObjectPromise;
+-        read(id: string): ResponseObjectPromise;
++        ): ResponseZonePromise;
++        read(id: string): ResponseZonePromise;
          purgeCache(
              id: string,
-@@ -200,7 +224,7 @@ declare namespace Cloudflare {
+             params: {
+@@ -200,7 +230,7 @@ declare namespace Cloudflare {
                  prefixes?: string[] | undefined;
              },
          ): ResponseObjectPromise;
 -        browse(): ResponseObjectPromise;
-+        browse(): Promise<RemoteZone[]>;
++        browse(): ResponseZonesPromise;
      }
  
      interface ZoneSettings {
