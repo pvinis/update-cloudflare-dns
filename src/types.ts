@@ -34,7 +34,7 @@ type ConfigRecordTXT = ConfigRecordCommonFields & { type: 'TXT', content: string
 /**
  * Record coming from the setup in `DNS-RECORDS.hjson`.
  */
-export type ConfigRecord = ConfigRecordA |ConfigRecordAAAA | ConfigRecordMX | ConfigRecordTXT
+export type ConfigRecord = ConfigRecordA | ConfigRecordAAAA | ConfigRecordMX | ConfigRecordTXT
 
 export type Config = {
 	records: ConfigRecord[]

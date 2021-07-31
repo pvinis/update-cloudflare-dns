@@ -8,18 +8,45 @@ var ERR = 2
 module.exports = {
 	root: true,
 
-	parser: '@typescript-eslint/parser',
-	plugins: ['@typescript-eslint', 'jest'],
+	env: {
+		node: true,
+		es6: true,
+		'jest/globals': true,
+	},
 
-	env: { 'jest/globals': true },
+	parser: '@typescript-eslint/parser', // typescript support
+	plugins: [
+		'@typescript-eslint', // typescript support
+		 'jest',
+	],
+	extends: [
+		'plugin:@typescript-eslint/recommended', // recommended rules for typescript
+	],
 
 	rules: {
-		semi: [ERR, 'never'], // we dont like semis around here
-		quotes: [ERR, 'single'], // why not single quotes?
+		// formatting
+		semi: OFF, // overridden
+		'@typescript-eslint/semi': [ERR, 'never'], // we dont like semis around here
+		quotes: OFF, // overridden
+		'@typescript-eslint/quotes': [ERR, 'single'], // why not single quotes?
 		indent: [ERR, 'tab', { SwitchCase: 1 }], // use tabs, also switch cases should be indented
-		'comma-dangle': [ERR, 'always-multiline'], // always dangling commas for multiline
+		'comma-dangle': OFF, // overridden
+		'@typescript-eslint/comma-dangle': [ERR, 'always-multiline'], // always dangling commas for multiline
 		'no-multiple-empty-lines': [ERR, { max: 2 }], // sometimes we like 2 empty lines as separator
-		'@typescript-eslint/no-extra-parens': [ERR], // clean up unnecessary parens
+		'no-extra-parens': OFF, // overridden
+		'@typescript-eslint/no-extra-parens': ERR, // clean up unnecessary parens
+		'space-infix-ops': OFF, // overridden
+		'@typescript-eslint/space-infix-ops': [ERR, { 'int32Hint': false }],
+
+		// help with possible bugs
+		// '@typescript-eslint/await-thenable': ERR, // make sure we dont use await when we shouldnt
+		'@typescript-eslint/adjacent-overload-signatures': ERR, // put all overloads types of a func close together
+		'@typescript-eslint/no-inferrable-types': OFF, // let us be more explicit if we want
+		// '@typescript-eslint/promise-function-async': ERR, // if we mess with promised, better have the async/await to match
+		// "require-await": OFF, // overridden
+		// "@typescript-eslint/require-await": ERR, // if we mess with promised, better have the async/await to match
+		// '@typescript-eslint/switch-exhaustiveness-check':ERR, // make sure our switches are complete
+
 
 		//decadejs: switch cases should be indented?
 		'object-curly-spacing': [ERR, 'always'],
