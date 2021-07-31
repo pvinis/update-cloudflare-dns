@@ -30,7 +30,7 @@ type ConfigRecordProxied = {
 type ConfigRecordA = ConfigRecordCommonFields & { type: 'A', ipv4: string } & ConfigRecordProxied
 type ConfigRecordAAAA = ConfigRecordCommonFields & { type: 'AAAA', ipv6: string } & ConfigRecordProxied
 type ConfigRecordMX = ConfigRecordCommonFields & { type: 'MX', mailServer: string, ttl?: number, priority: number }
-type ConfigRecordTXT = ConfigRecordCommonFields & { type: 'TXT', content: string,  ttl?: number}
+type ConfigRecordTXT = ConfigRecordCommonFields & { type: 'TXT', content: string, ttl?: number}
 /**
  * Record coming from the setup in `DNS-RECORDS.hjson`.
  */

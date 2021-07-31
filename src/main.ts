@@ -96,27 +96,27 @@ const main = async () => {
 			try {
 				const content = recordContent(rec)
 				switch (rec.type) {
-				case 'A':
-				case 'AAAA':
-					await cf.dnsRecords.add(zoneId, {
-						type: rec.type,
-						name: rec.name,
-						content,
-						ttl: 1,
-						proxied: rec.proxied ?? true,
-					})
-					break
+					case 'A':
+					case 'AAAA':
+						await cf.dnsRecords.add(zoneId, {
+							type: rec.type,
+							name: rec.name,
+							content,
+							ttl: 1,
+							proxied: rec.proxied ?? true,
+						})
+						break
 
-				case 'TXT':
-					await cf.dnsRecords.add(zoneId, {
-						type: rec.type,
-						name: rec.name,
-						content,
-						ttl: rec.ttl ?? 1,
-					})
-					break
+					case 'TXT':
+						await cf.dnsRecords.add(zoneId, {
+							type: rec.type,
+							name: rec.name,
+							content,
+							ttl: rec.ttl ?? 1,
+						})
+						break
 
-				default: absurd(rec)
+					default: absurd(rec)
 				}
 				console.log('✔ ', printConfigRecord(rec, ZONE))
 			} catch (err) {

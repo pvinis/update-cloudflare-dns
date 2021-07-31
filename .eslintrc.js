@@ -19,7 +19,7 @@ module.exports = {
 		indent: [ERR, 'tab', { SwitchCase: 1 }], // use tabs, also switch cases should be indented
 		'comma-dangle': [ERR, 'always-multiline'], // always dangling commas for multiline
 		'no-multiple-empty-lines': [ERR, { max: 2 }], // sometimes we like 2 empty lines as separator
-		'no-extra-parens': [ERR], // clean up unnecessary parens
+		'@typescript-eslint/no-extra-parens': [ERR], // clean up unnecessary parens
 
 		//decadejs: switch cases should be indented?
 		'object-curly-spacing': [ERR, 'always'],
