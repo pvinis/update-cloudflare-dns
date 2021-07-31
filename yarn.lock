@@ -739,10 +739,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/hjson@2.4.2":
-  version "2.4.2"
-  resolved "https://registry.yarnpkg.com/@types/hjson/-/hjson-2.4.2.tgz#fd0288a5b6778cda993c978e43cc978ddc8f22e9"
-  integrity sha512-MSKTfEyR8DbzJTOAY47BIJBD72ol4cu6BOw5inda0q1eEtEmurVHL4OmYB3Lxa4/DwXbWidkddvtoygbGQEDIw==
+"@types/hjson@2.4.3":
+  version "2.4.3"
+  resolved "https://registry.yarnpkg.com/@types/hjson/-/hjson-2.4.3.tgz#bbb825f7937e946476610b3a7266a94f27878716"
+  integrity sha512-EDixutNn3FQwa5HdET+Tx0h7TirP2knJa9TB21ySqr8XVqT/VsvvOwnanTLHUOOpNofcUhkRKhOk0Wh4YD9RSA==
 
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0", "@types/istanbul-lib-coverage@^2.0.1":
   version "2.0.3"
