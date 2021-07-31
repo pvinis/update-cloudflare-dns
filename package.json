@@ -15,7 +15,7 @@
     "dependencies": {
         "@actions/core": "1.4.0",
         "@actions/github": "5.0.0",
-        "cloudflare": "2.7.0",
+        "cloudflare": "2.8.0",
         "dotenv": "10.0.0",
         "fp-ts": "2.11.1",
         "hjson": "3.2.2"

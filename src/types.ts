@@ -1,45 +1,26 @@
 // import { RecordTypes } from 'cloudflare'
 
 
-/**
- * Record coming from cloudflare using their API.
- */
-export interface RemoteRecord {
-	id: string
-	// zone_id: string
-	zone_name: string,
-	name: string
-	// type: RecordTypes
-	type:
-	| 'A'
-	| 'AAAA'
-	// | 'CNAME'
-	// | 'HTTPS'
-	| 'TXT'
-	// | 'SRV'
-	// | 'LOC'
-	| 'MX'
-	// | 'NS'
-	// | 'SPF'
-	// | 'CERT'
-	// | 'DNSKEY'
-	// | 'DS'
-	// | 'NAPTR'
-	// | 'SMIMEA'
-	// | 'SSHFP'
-	// | 'SVCB'
-	// | 'TLSA'
-	// | 'URI read only'
-	content: string
-	priority?: number
-	// proxiable: boolean
-	proxied: boolean
-	ttl: number
-	// locked: boolean
-	// meta: {}
-	// created_on: string
-	// modified_on: string
-}
+// type:
+// | 'A'
+// | 'AAAA'
+// // | 'CNAME'
+// // | 'HTTPS'
+// | 'TXT'
+// // | 'SRV'
+// // | 'LOC'
+// | 'MX'
+// // | 'NS'
+// // | 'SPF'
+// // | 'CERT'
+// // | 'DNSKEY'
+// // | 'DS'
+// // | 'NAPTR'
+// // | 'SMIMEA'
+// // | 'SSHFP'
+// // | 'SVCB'
+// // | 'TLSA'
+// // | 'URI read only'
 
 type ConfigRecordCommonFields = {
 	name: string

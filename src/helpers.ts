@@ -1,8 +1,9 @@
 import { absurd } from 'fp-ts/lib/function'
 import * as core from '@actions/core'
 import { toLowerCase } from 'fp-ts/lib/string'
+import { RemoteRecord } from 'cloudflare'
 
-import { ConfigRecord, ConfigRecordProxied, RemoteRecord } from './types'
+import { ConfigRecord, ConfigRecordProxied } from './types'
 
 
 export const niceRecordName = (rec: RemoteRecord): string => {

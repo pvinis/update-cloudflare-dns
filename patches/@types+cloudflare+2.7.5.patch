@@ -1,0 +1,131 @@
+diff --git a/node_modules/@types/cloudflare/index.d.ts b/node_modules/@types/cloudflare/index.d.ts
+index 515f398..7976254 100755
+--- a/node_modules/@types/cloudflare/index.d.ts
++++ b/node_modules/@types/cloudflare/index.d.ts
+@@ -5,15 +5,13 @@
+ // Minimum TypeScript Version: 3.3
+ 
+ declare namespace Cloudflare {
+-    type RecordTypes =
++    type RecordTypesWithoutPriority =
+         | "A"
+         | "AAAA"
+         | "CNAME"
+         | "HTTPS"
+         | "TXT"
+-        | "SRV"
+         | "LOC"
+-        | "MX"
+         | "NS"
+         | "SPF"
+         | "CERT"
+@@ -23,10 +21,31 @@ declare namespace Cloudflare {
+         | "SMIMEA"
+         | "SSHFP"
+         | "SVCB"
+-        | "TLSA"
++        | "TLSA";
++    type RecordTypesWithPriority =
++        | "SRV"
++        | "MX"
+         | "URI read only";
++	type RecordTypes = RecordTypesWithoutPriority | RecordTypesWithPriority;
++
++    export interface RemoteRecord {
++        id: string;
++        zone_id: string;
++        zone_name: string;
++        name: string;
++        type: RecordTypes;
++        content: string;
++        priority?: number;
++        proxiable: boolean;
++        proxied: boolean;
++        ttl: number;
++        locked: boolean;
++        // meta: {}
++        created_on: string;
++        modified_on: string;
++    }
+ 
+-    type ResponseObjectPromise = Promise<object>;
++    type ResponseObjectPromise = Promise<{result: RemoteRecord[]}>;
+ 
+     interface AuthObject {
+         email?: string | undefined;
+@@ -35,7 +54,7 @@ declare namespace Cloudflare {
+     }
+ 
+     interface DnsRecordWithoutPriority {
+-        type: Exclude<RecordTypes, 'MX' | 'SRV' | 'URI'>;
++        type: RecordTypesWithoutPriority;
+         name: string;
+         content: string;
+         ttl: number;
+@@ -43,7 +62,7 @@ declare namespace Cloudflare {
+     }
+ 
+     interface DnsRecordWithPriority {
+-        type: Exclude<RecordTypes, 'MX' | 'SRV' | 'URI'>;
++        type: RecordTypesWithPriority;
+         name: string;
+         content: string;
+         ttl: number;
+@@ -73,15 +92,15 @@ declare namespace Cloudflare {
+             zone_id: string,
+             id: string,
+             record: DnsRecord,
+-        ): ResponseObjectPromise;
+-        browse(zone_id: string): ResponseObjectPromise;
++        ): Promise<RemoteRecord[]>;
++        browse(zone_id: string): Promise<RemoteRecord[]>;
+         export(zone_id: string): ResponseObjectPromise;
+         del(zone_id: string, id: string): ResponseObjectPromise;
+         read(zone_id: string, id: string): ResponseObjectPromise;
+         add(
+             zone_id: string,
+             record: DnsRecord,
+-        ): ResponseObjectPromise;
++        ): Promise<RemoteRecord[]>;
+     }
+ 
+     interface EnterpriseZoneWorkerScripts {
+@@ -170,6 +189,11 @@ declare namespace Cloudflare {
+         read(id: string): ResponseObjectPromise;
+     }
+ 
++    interface RemoteZone {
++        name: string;
++        id: string;
++	}
++
+     interface Zones {
+         activationCheck(id: string): ResponseObjectPromise;
+         del(id: string): ResponseObjectPromise;
+@@ -178,7 +202,7 @@ declare namespace Cloudflare {
+             action: { id: string };
+             jump_start?: boolean | undefined;
+             type?: "full" | "partial" | undefined;
+-        }): ResponseObjectPromise;
++        }): Promise<RemoteZone[]>;
+         edit(
+             id: string,
+             zone: {
+@@ -187,7 +211,7 @@ declare namespace Cloudflare {
+                 jump_start?: boolean | undefined;
+                 type?: "full" | "partial" | undefined;
+             },
+-        ): ResponseObjectPromise;
++        ): Promise<RemoteZone[]>;
+         read(id: string): ResponseObjectPromise;
+         purgeCache(
+             id: string,
+@@ -200,7 +224,7 @@ declare namespace Cloudflare {
+                 prefixes?: string[] | undefined;
+             },
+         ): ResponseObjectPromise;
+-        browse(): ResponseObjectPromise;
++        browse(): Promise<RemoteZone[]>;
+     }
+ 
+     interface ZoneSettings {
