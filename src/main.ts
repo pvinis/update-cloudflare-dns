@@ -102,6 +102,7 @@ const main = async () => {
 						type: rec.type,
 						name: rec.name,
 						content,
+						ttl: 1,
 						proxied: rec.proxied ?? true,
 					})
 					break
@@ -111,6 +112,7 @@ const main = async () => {
 						type: rec.type,
 						name: rec.name,
 						content,
+						ttl: rec.ttl ?? 1,
 					})
 					break
 

@@ -9,7 +9,7 @@ module.exports = {
 
 	parser: '@typescript-eslint/parser',
 	plugins: ['@typescript-eslint', 'jest'],
-	extends: ['@decadejs/eslint-config-base'],
+	// extends: ['@decadejs/eslint-config-base'],
 
 	env: { 'jest/globals': true },
 

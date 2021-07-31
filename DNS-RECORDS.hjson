@@ -71,7 +71,7 @@
 		# The `_sub.mydomain.com.` part is the full version. We only care about everything before `.mydomain.com.`.
 		# So if we have `_sub.mydomain.com.`, we would use `name: _sub`.
 		# If it was just `mydomain.com.`, we can use just `name: @`. See below for example.
-		# `1` is not used in TXT.
+		# `1` is the amount of seconds for Time-To-Live.
 		# `IN` is not used in TXT.
 		# `TXT` is the type, of course.
 		# Last part is the content, that we can just write even without the quotes.
@@ -82,12 +82,14 @@
 		}
 
 		# Another example:
-		# mydomain.com.	1	IN	TXT	"Something else"
+		# mydomain.com.	7200	IN	TXT	"Something else"
 		# The `mydomain.com.` part can be replaced with just the short alias `@`.
+		# `7200` means TTL is 2 hours.
 		{
 			type: TXT
 			name: @
 			content: Something else
+			ttl: 7200
 		}
 	]
 }

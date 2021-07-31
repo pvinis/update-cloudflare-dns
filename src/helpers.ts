@@ -33,6 +33,7 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 
 	case 'TXT':
 		if (remoteRecord.content !== configRecord.content) return false
+		if (remoteRecord.ttl !== configRecord.ttl) return false
 		break
 
 		// case "SRV":
@@ -72,10 +73,16 @@ export const recordContent = (record: ConfigRecord): string => {
 	absurd(record)
 }
 
+export const recordTTL = (record: ConfigRecord): number => {
+	switch (record.type) {
+		case 'TXT': return record.ttl ?? 1
+		default: return 1
+	}
+}
 
 export const printRemoteRecord = (record: RemoteRecord, full: boolean = false): string => {
 	const name = full ? `${record.name}.` : niceRecordName(record)
-	return `${name}\t1\tIN\t${record.type}\t${record.content}`
+	return `${name}\t${record.ttl}\tIN\t${record.type}\t${record.priority !== undefined ? `${record.priority} ` : ""}${record.content}${record.type === "MX" ? "." : ""}`
 }
 
 
@@ -85,16 +92,17 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 	}.`
 	const name = full ? fullName : record.name
 	let content = recordContent(record)
+	const ttl = recordTTL(record)
 	switch(record.type) {
 	case 'TXT':
 		content = `"${content}"`
 		break
 	case 'MX':
-		content = `${content}.`
+		content = `${record.priority} ${content}.`
 		break
 	default: break
 	}
-	return `${name}\t1\tIN\t${record.type}\t${content}`
+	return `${name}\t${ttl}\tIN\t${record.type}\t${content}`
 }
 
 
