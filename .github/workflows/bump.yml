@@ -18,7 +18,7 @@ jobs:
         run: |
           git config --local user.email "pvinis+bot@gmail.com"
           git config --local user.name "Github Actions Bot"
-          yarn bump --new-version ${{ github.event.inputs.version }}
+          npm run bump --new-version ${{ github.event.inputs.version }}
       - uses: ad-m/github-push-action@v0.6.0
         with:
           tags: true
