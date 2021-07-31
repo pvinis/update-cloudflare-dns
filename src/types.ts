@@ -39,6 +39,3 @@ export type ConfigRecord = ConfigRecordA |ConfigRecordAAAA | ConfigRecordMX | Co
 export type Config = {
 	records: ConfigRecord[]
 }
-
-
-//decadejs: switch cases should be indented?

@@ -72,7 +72,7 @@ describe(printRemoteRecord, () => {
 				'mydomain.com.	1	IN	A	11.22.33.44',
 			],
 			[
-				{ type: 'MX', name: 'mail.mydomain.com', priority: 20, content: "some.email.com" },
+				{ type: 'MX', name: 'mail.mydomain.com', priority: 20, content: 'some.email.com' },
 				'mail.mydomain.com.	1	IN	MX	20 some.email.com.',
 			],
 		]
@@ -87,37 +87,24 @@ describe(printConfigRecord, () => {
 	it('works', () => {
 		const testCases: Array<[input: ConfigRecord, zone: string, expected: string]> = [
 			[
-				{ type: 'A', name: 'mail', ipv4: '11.22.33.44', },
+				{ type: 'A', name: 'mail', ipv4: '11.22.33.44' },
 				'mydomain.com',
-				'mail	1	IN	A	11.22.33.44'
+				'mail	1	IN	A	11.22.33.44',
 			],
 			[
-				{
-					type: 'A',
-					name: '@',
-					ipv4: '11.22.33.44',
-				},
+				{ type: 'A', name: '@', ipv4: '11.22.33.44' },
 				'mydomain.com',
-		'@	1	IN	A	11.22.33.44'
+				'@	1	IN	A	11.22.33.44',
 			],
 			[
-				{
-					type: 'TXT',
-					name: '@',
-					content: 'wow=pavlos',
-				},
+				{ type: 'TXT', name: '@', content: 'wow=pavlos' },
 				'mydomain.com',
-		('@	1	IN	TXT	"wow=pavlos"')
+				'@	1	IN	TXT	"wow=pavlos"',
 			],
 			[
-				{
-					type: 'MX',
-					name: 'mail',
-					mailServer: 'some.email.com',
-					priority: 20,
-				},
+				{ type: 'MX', name: 'mail', mailServer: 'some.email.com', priority: 20 },
 				'mydomain.com',
-		('mail	1	IN	MX	20 some.email.com.')
+				'mail	1	IN	MX	20 some.email.com.',
 			],
 		]
 		testCases.forEach(([input, zone, expected]) => {
@@ -128,28 +115,19 @@ describe(printConfigRecord, () => {
 	it('also prints in full', () => {
 		const testCases: Array<[input: ConfigRecord, zone: string, expected: string]> = [
 			[
-				{ type: 'A', name: 'mail', ipv4: '11.22.33.44', },
+				{ type: 'A', name: 'mail', ipv4: '11.22.33.44' },
 				'mydomain.com',
-		('mail.mydomain.com.	1	IN	A	11.22.33.44')
+				'mail.mydomain.com.	1	IN	A	11.22.33.44',
 			],
 			[
-				{
-					type: 'A',
-					name: '@',
-					ipv4: '11.22.33.44',
-				},
+				{ type: 'A', name: '@', ipv4: '11.22.33.44' },
 				'mydomain.com',
-		('mydomain.com.	1	IN	A	11.22.33.44')
+				'mydomain.com.	1	IN	A	11.22.33.44',
 			],
 			[
-				{
-					type: 'MX',
-					name: 'mail',
-					mailServer: 'some.email.com',
-					priority: 20,
-				},
+				{ type: 'MX', name: 'mail', mailServer: 'some.email.com', priority: 20 },
 				'mydomain.com',
-		('mail.mydomain.com.	1	IN	MX	20 some.email.com.')
+				'mail.mydomain.com.	1	IN	MX	20 some.email.com.',
 			],
 		]
 		testCases.forEach(([input, zone, expected]) => {
