@@ -18,45 +18,45 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 	if (niceName !== configRecord.name) return false
 
 	switch (configRecord.type) {
-	case 'A':
-		if (remoteRecord.content !== configRecord.ipv4) return false
-		if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
-		break
+		case 'A':
+			if (remoteRecord.content !== configRecord.ipv4) return false
+			if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
+			break
 
-	case 'AAAA':
-		if (remoteRecord.content.toLowerCase() !== configRecord.ipv6.toLowerCase()) return false
-		if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
-		break
+		case 'AAAA':
+			if (remoteRecord.content.toLowerCase() !== configRecord.ipv6.toLowerCase()) return false
+			if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
+			break
 
-		// case "CNAME":
-		// case "HTTPS":
+			// case "CNAME":
+			// case "HTTPS":
 
-	case 'TXT':
-		if (remoteRecord.content !== configRecord.content) return false
-		if (remoteRecord.ttl !== configRecord.ttl) return false
-		break
+		case 'TXT':
+			if (remoteRecord.content !== configRecord.content) return false
+			if (remoteRecord.ttl !== configRecord.ttl) return false
+			break
 
 		// case "SRV":
 		// case "LOC":
 		//
-	case 'MX':
-		if (remoteRecord.content !== configRecord.mailServer) return false
-		if (remoteRecord.priority !== configRecord.priority) return false
-		break
+		case 'MX':
+			if (remoteRecord.content !== configRecord.mailServer) return false
+			if (remoteRecord.priority !== configRecord.priority) return false
+			break
 
-		// case "NS":
-		// case "SPF":
-		// case "CERT":
-		// case "DNSKEY":
-		// case "DS":
-		// case "NAPTR":
-		// case "SMIMEA":
-		// case "SSHFP":
-		// case "SVCB":
-		// case "TLSA":
-		// case "URI read only":
+			// case "NS":
+			// case "SPF":
+			// case "CERT":
+			// case "DNSKEY":
+			// case "DS":
+			// case "NAPTR":
+			// case "SMIMEA":
+			// case "SSHFP":
+			// case "SVCB":
+			// case "TLSA":
+			// case "URI read only":
 
-	default: absurd(configRecord)
+		default: absurd(configRecord)
 	}
 
 	return true
@@ -65,10 +65,10 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 
 export const recordContent = (record: ConfigRecord): string => {
 	switch (record.type) {
-	case 'A': return record.ipv4
-	case 'AAAA': return record.ipv6
-	case 'TXT': return record.content
-	case 'MX': return record.mailServer
+		case 'A': return record.ipv4
+		case 'AAAA': return record.ipv6
+		case 'TXT': return record.content
+		case 'MX': return record.mailServer
 	}
 	absurd(record)
 }
@@ -82,7 +82,7 @@ export const recordTTL = (record: ConfigRecord): number => {
 
 export const printRemoteRecord = (record: RemoteRecord, full: boolean = false): string => {
 	const name = full ? `${record.name}.` : niceRecordName(record)
-	return `${name}\t${record.ttl}\tIN\t${record.type}\t${record.priority !== undefined ? `${record.priority} ` : ""}${record.content}${record.type === "MX" ? "." : ""}`
+	return `${name}\t${record.ttl}\tIN\t${record.type}\t${record.priority !== undefined ? `${record.priority} ` : ''}${record.content}${record.type === 'MX' ? '.' : ''}`
 }
 
 
@@ -94,13 +94,13 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 	let content = recordContent(record)
 	const ttl = recordTTL(record)
 	switch(record.type) {
-	case 'TXT':
-		content = `"${content}"`
-		break
-	case 'MX':
-		content = `${record.priority} ${content}.`
-		break
-	default: break
+		case 'TXT':
+			content = `"${content}"`
+			break
+		case 'MX':
+			content = `${record.priority} ${content}.`
+			break
+		default: break
 	}
 	return `${name}\t${ttl}\tIN\t${record.type}\t${content}`
 }
