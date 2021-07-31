@@ -1,8 +1,8 @@
 import {
 	niceRecordName,
-	partitionRecords,
 	printConfigRecord,
 	printRemoteRecord,
+	remoteRecordToConfigRecord,
 	sameRecord,
 } from './helpers'
 import { ConfigRecord, RemoteRecord } from './types'
@@ -132,6 +132,90 @@ describe(printConfigRecord, () => {
 		]
 		testCases.forEach(([input, zone, expected]) => {
 			expect(printConfigRecord(input, zone, true)).toBe(expected)
+		})
+	})
+})
+
+
+describe(remoteRecordToConfigRecord, () => {
+	it('works', () => {
+		const testCases: Array<[input: RemoteRecord, expected: ConfigRecord]> = [
+			// [mockRemoteRecord({ type: 'A' }), {
+			// 	type: 'TXT',
+			// 	name: 'wow',
+			// 	ipv4: 'pavlos',
+			// }],
+
+			[
+				mockRemoteRecord({ type: 'A', content: '11.22.33.45' }), {
+					type: 'A',
+					name: 'wow',
+					ipv4: '11.22.33.45',
+					proxied: true,
+				},
+			],
+			[
+				mockRemoteRecord({ type: 'A', content: '11.22.33.46' }), {
+					type: 'A',
+					name: 'wow',
+					ipv4: '11.22.33.46',
+					proxied: true,
+				},
+			],
+			[
+				mockRemoteRecord({ type: 'A', content: '11.22.33.47', proxied: false }),
+				{ type: 'A', name: 'wow', ipv4: '11.22.33.47', proxied: false },
+			],
+			// expect(
+			// 	sameRecord(
+			// 		mockRemoteRecord({ type: 'A', content: '11.22.33.44', proxied: true }),
+			// 		{ type: 'A', name: 'wow', ipv4: '11.22.33.44', proxied: false },
+			// 	),
+			// ).toBe(false)
+
+			[
+				{
+					id: '4a5dd05d8731962f547eb954e164c49f',
+					zone_name: 'mydomain.com',
+					name: 'mail.mydomain.com',
+					type: 'AAAA',
+					content: '684D:1111:222:3333:4444:5555:6:78', // notice the capital `D`
+					proxied: true,
+					ttl: 1,
+				},
+				{ type: 'AAAA', name: 'mail', ipv6: '684d:1111:222:3333:4444:5555:6:78', proxied: true },
+			],
+			[
+				{
+					id: '4a5dd05d8731962f547eb954e164c49f',
+					zone_name: 'mydomain.com',
+					name: 'mail.mydomain.com',
+					type: 'AAAA',
+					content: '684d:1111:222:3333:4444:5555:6:77',
+					proxied: true,
+					ttl: 1,
+				},
+				{ type: 'AAAA', name: 'mail', ipv6: '684d:1111:222:3333:4444:5555:6:77', proxied: true },
+			],
+			[
+				mockRemoteRecord({
+					zone_name: 'mydomain.com',
+					name: 'mail.mydomain.com',
+					type: 'MX',
+					content: 'some.email.com',
+					priority: 20,
+					proxied: true,
+				}),
+				{
+					type: 'MX',
+					name: 'mail',
+					mailServer: 'some.email.com',
+					priority: 20,
+				},
+			],
+		]
+		testCases.forEach(([input, expected]) => {
+			expect(remoteRecordToConfigRecord(input)).toEqual(expected)
 		})
 	})
 })

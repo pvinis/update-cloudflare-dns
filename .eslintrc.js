@@ -1,8 +1,8 @@
-/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars  */
 var OFF = 0
 var WARN = 1
 var ERR = 2
-/* eslint-enable no-unused-vars */
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 
 module.exports = {
@@ -15,11 +15,17 @@ module.exports = {
 	},
 
 	parser: '@typescript-eslint/parser', // typescript support
+	parserOptions: { sourceType: 'module' },
 	plugins: [
+		'import', // import ordering
 		'@typescript-eslint', // typescript support
-		 'jest',
+		'jest',
 	],
 	extends: [
+		'eslint:recommended',
+		'plugin:import/errors',
+		'plugin:import/warnings',
+		'plugin:import/typescript',
 		'plugin:@typescript-eslint/recommended', // recommended rules for typescript
 	],
 
@@ -54,7 +60,8 @@ module.exports = {
 		'arrow-spacing': ERR,
 		'no-multi-spaces': [ERR, { ignoreEOLComments: true }], // has exceptions too, if needed
 		'comma-spacing': ERR,
-		'no-unused-vars': [ERR, { argsIgnorePattern: '^_' }],
+		'no-unused-vars': OFF, // overridden
+		'@typescript-eslint/no-unused-vars': [ERR, { argsIgnorePattern: '^_' }],
 
 		// imports
 		'import/newline-after-import': [ERR, { count: 2 }],

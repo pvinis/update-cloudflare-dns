@@ -1,7 +1,8 @@
 import { absurd } from 'fp-ts/lib/function'
 import * as core from '@actions/core'
+import { toLowerCase } from 'fp-ts/lib/string'
 
-import { ConfigRecord, RemoteRecord } from './types'
+import { ConfigRecord, ConfigRecordProxied, RemoteRecord } from './types'
 
 
 export const niceRecordName = (rec: RemoteRecord): string => {
@@ -10,6 +11,49 @@ export const niceRecordName = (rec: RemoteRecord): string => {
 	return removeZone.slice(0, -1)
 }
 
+
+const setCommonStuff = (rec: RemoteRecord): {name: ConfigRecord['name'], proxied?:ConfigRecordProxied['proxied']} => {
+	return {
+		name: niceRecordName(rec),
+		proxied: rec.proxied,
+	}
+}
+
+export const remoteRecordToConfigRecord = (rec: RemoteRecord): ConfigRecord => {
+	switch(rec.type){
+		case 'A':
+			return {
+				...setCommonStuff(rec),
+				type: 'A',
+				ipv4: rec.content,
+			}
+
+		case 'AAAA':
+			return {
+				...setCommonStuff(rec),
+				type: 'AAAA',
+				ipv6: toLowerCase(rec.content),
+			}
+
+		case 'TXT':
+			return {
+				type: rec.type,
+				...setCommonStuff(rec),
+				name: '',
+				content: '',
+				ttl: 1,
+			}
+
+		case 'MX':
+			return {
+				type: rec.type,
+				name: niceRecordName(rec),
+				mailServer: rec.content,
+				priority: rec.priority ?? 1,
+			}
+	}
+	absurd(rec.type)
+}
 
 export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecord): boolean => {
 	if (remoteRecord.type !== configRecord.type) return false
@@ -28,37 +72,16 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 			if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
 			break
 
-			// case "CNAME":
-			// case "HTTPS":
-
 		case 'TXT':
 			if (remoteRecord.content !== configRecord.content) return false
 			if (remoteRecord.ttl !== configRecord.ttl) return false
 			break
 
-		// case "SRV":
-		// case "LOC":
-		//
 		case 'MX':
 			if (remoteRecord.content !== configRecord.mailServer) return false
 			if (remoteRecord.priority !== configRecord.priority) return false
 			break
-
-			// case "NS":
-			// case "SPF":
-			// case "CERT":
-			// case "DNSKEY":
-			// case "DS":
-			// case "NAPTR":
-			// case "SMIMEA":
-			// case "SSHFP":
-			// case "SVCB":
-			// case "TLSA":
-			// case "URI read only":
-
-		default: absurd(configRecord)
 	}
-
 	return true
 }
 
@@ -74,10 +97,10 @@ export const recordContent = (record: ConfigRecord): string => {
 }
 
 export const recordTTL = (record: ConfigRecord): number => {
-	switch (record.type) {
-		case 'TXT': return record.ttl ?? 1
-		default: return 1
+	if (record.type === 'TXT') {
+		return record.ttl ?? 1
 	}
+	return 1
 }
 
 export const printRemoteRecord = (record: RemoteRecord, full: boolean = false): string => {
@@ -100,7 +123,6 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 		case 'MX':
 			content = `${record.priority} ${content}.`
 			break
-		default: break
 	}
 	return `${name}\t${ttl}\tIN\t${record.type}\t${content}`
 }

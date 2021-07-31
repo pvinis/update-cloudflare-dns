@@ -1,4 +1,4 @@
-import { RecordTypes } from 'cloudflare'
+// import { RecordTypes } from 'cloudflare'
 
 
 /**
@@ -9,7 +9,27 @@ export interface RemoteRecord {
 	// zone_id: string
 	zone_name: string,
 	name: string
-	type: RecordTypes
+	// type: RecordTypes
+	type:
+	| 'A'
+	| 'AAAA'
+	// | 'CNAME'
+	// | 'HTTPS'
+	| 'TXT'
+	// | 'SRV'
+	// | 'LOC'
+	| 'MX'
+	// | 'NS'
+	// | 'SPF'
+	// | 'CERT'
+	// | 'DNSKEY'
+	// | 'DS'
+	// | 'NAPTR'
+	// | 'SMIMEA'
+	// | 'SSHFP'
+	// | 'SVCB'
+	// | 'TLSA'
+	// | 'URI read only'
 	content: string
 	priority?: number
 	// proxiable: boolean
@@ -24,7 +44,7 @@ export interface RemoteRecord {
 type ConfigRecordCommonFields = {
 	name: string
 }
-type ConfigRecordProxied = {
+export type ConfigRecordProxied = {
 	proxied?: boolean
 }
 type ConfigRecordA = ConfigRecordCommonFields & { type: 'A', ipv4: string } & ConfigRecordProxied
