@@ -727,10 +727,10 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
-"@types/cloudflare@2.7.1":
-  version "2.7.1"
-  resolved "https://registry.yarnpkg.com/@types/cloudflare/-/cloudflare-2.7.1.tgz#6eafe0bcc0326f56085525f9f20cfb7bcbaf5d07"
-  integrity sha512-wi0BjKFuKHDqgKX5m1mvw9gVWMnrKH81d6QXPOAe+SjodLLPYfo3KUQADNroccqFF1Ljmk5N5NEXFiGi7Erkxg==
+"@types/cloudflare@2.7.5":
+  version "2.7.5"
+  resolved "https://registry.yarnpkg.com/@types/cloudflare/-/cloudflare-2.7.5.tgz#1973a3c08b21e3a5bf5da333db202e040c669509"
+  integrity sha512-TIy9RVSuUDNVTHq7sxBalOlUEClSR2AXYKan6tRw7hG4PrDm33wcmjdgURi+vItRLzwwqOoT/6nUCZQwobYMRw==
 
 "@types/graceful-fs@^4.1.2":
   version "4.1.5"
