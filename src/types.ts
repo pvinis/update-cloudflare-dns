@@ -25,7 +25,7 @@ type ConfigRecordCommonFields = {
 export type ConfigRecordProxiedOrTTL =
 	| {
 			proxied: true
-}
+	  }
 	| {
 			proxied?: false
 			ttl?: number
