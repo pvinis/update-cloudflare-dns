@@ -1,8 +1,8 @@
 import { absurd } from 'fp-ts/lib/function'
 import { toLowerCase } from 'fp-ts/lib/string'
-import { RecordTypes, RemoteRecord } from 'cloudflare'
+import { RemoteRecord } from 'cloudflare'
 
-import { ConfigRecord, ConfigRecordProxied } from './types'
+import { ConfigRecord, ConfigRecordCommonFields } from './types'
 
 
 export const niceRecordName = (rec: RemoteRecord): string => {
@@ -11,14 +11,13 @@ export const niceRecordName = (rec: RemoteRecord): string => {
 	return removeZone.slice(0, -1)
 }
 
-
-const setCommonStuff = (rec: RemoteRecord): {name: ConfigRecord['name'], proxied?:ConfigRecordProxied['proxied']} => {
+const setCommonStuff = (rec: RemoteRecord): ConfigRecordCommonFields => {
 	return {
 		name: niceRecordName(rec),
 		proxied: rec.proxied,
+		ttl: rec.ttl,
 	}
 }
-
 
 export const remoteRecordToConfigRecord = (rec: RemoteRecord): ConfigRecord => {
 	switch (rec.type) {
@@ -36,19 +35,19 @@ export const remoteRecordToConfigRecord = (rec: RemoteRecord): ConfigRecord => {
 				ipv6: toLowerCase(rec.content),
 			}
 
-case 'CNAME':
-			return {
-				...setCommonStuff(rec),
-				type: 'CNAME',
-				ipv6: toLowerCase(rec.content),
-			}
+			// case 'CNAME':
+			// 	return {
+			// 		...setCommonStuff(rec),
+			// 		type: 'CNAME',
+			// 		ipv6: toLowerCase(rec.content),
+			// 	}
 
-case 'HTTPS':
-			return {
-				...setCommonStuff(rec),
-				type: 'HTTPS',
-				ipv6: toLowerCase(rec.content),
-			}
+			// case 'HTTPS':
+			// 	return {
+			// 		...setCommonStuff(rec),
+			// 		type: 'HTTPS',
+			// 		ipv6: toLowerCase(rec.content),
+			// 	}
 
 		case 'TXT':
 			return {
@@ -76,7 +75,10 @@ case 'HTTPS':
 	}
 }
 
-export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecord): boolean => {
+export const sameRecord = (
+	remoteRecord: RemoteRecord,
+	configRecord: ConfigRecord
+): boolean => {
 	if (remoteRecord.type !== configRecord.type) return false
 
 	const niceName = niceRecordName(remoteRecord)
@@ -89,7 +91,10 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 			break
 
 		case 'AAAA':
-			if (remoteRecord.content.toLowerCase() !== configRecord.ipv6.toLowerCase()) return false
+			if (
+				remoteRecord.content.toLowerCase() !== configRecord.ipv6.toLowerCase()
+			)
+				return false
 			if (remoteRecord.proxied !== (configRecord.proxied ?? true)) return false
 			break
 
@@ -106,15 +111,19 @@ export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecor
 	return true
 }
 
-
 export const recordContent = (record: ConfigRecord): string => {
 	switch (record.type) {
-		case 'A': return record.ipv4
-		case 'AAAA': return record.ipv6
-		case 'TXT': return record.content
-		case 'MX': return record.mailServer
+		case 'A':
+			return record.ipv4
+		case 'AAAA':
+			return record.ipv6
+		case 'TXT':
+			return record.content
+		case 'MX':
+			return record.mailServer
 	}
-	return absurd(record)
+	// return absurd(record)
+	return 'OH NO'
 }
 
 export const recordTTL = (record: ConfigRecord): number => {
@@ -124,16 +133,22 @@ export const recordTTL = (record: ConfigRecord): number => {
 	return 1
 }
 
-export const printRemoteRecord = (record: RemoteRecord, full: boolean = false): string => {
+export const printRemoteRecord = (
+	record: RemoteRecord,
+	full: boolean = false
+): string => {
 	const name = full ? `${record.name}.` : niceRecordName(record)
-	return `${name}\t${record.ttl}\tIN\t${record.type}\t${record.priority !== undefined ? `${record.priority} ` : ''}${record.content}${record.type === 'MX' ? '.' : ''}`
+	return `${name}\t${record.ttl}\tIN\t${record.type}\t${
+		record.priority !== undefined ? `${record.priority} ` : ''
+	}${record.content}${record.type === 'MX' ? '.' : ''}`
 }
 
-
-export const printConfigRecord = (record: ConfigRecord, zone: string, full: boolean = false): string => {
-	const fullName = `${
-		record.name === '@' ? zone : `${record.name}.${zone}`
-	}.`
+export const printConfigRecord = (
+	record: ConfigRecord,
+	zone: string,
+	full: boolean = false
+): string => {
+	const fullName = `${record.name === '@' ? zone : `${record.name}.${zone}`}.`
 	const name = full ? fullName : record.name
 	let content = recordContent(record)
 	const ttl = recordTTL(record)
@@ -148,11 +163,27 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 	return `${name}\t${ttl}\tIN\t${record.type}\t${content}`
 }
 
-
-export const partitionRecords = <T, U>(remote: T[], local: U[], comparator: (_a: T, _b: U)=> boolean): {toBeDeleted: T[], toBeKept:T[], toBeAdded:U[]} => {
-	const toBeDeleted = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) === -1)
-	const toBeKept = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) !== -1)
-	const toBeAdded = local.filter(rec => remote.findIndex(possiblySameRec => comparator(possiblySameRec, rec)) === -1)
+export const partitionRecords = <T, U>(
+	remote: T[],
+	local: U[],
+	comparator: (_a: T, _b: U) => boolean
+): { toBeDeleted: T[]; toBeKept: T[]; toBeAdded: U[] } => {
+	const toBeDeleted = remote.filter(
+		(rec) =>
+			local.findIndex((possiblySameRec) => comparator(rec, possiblySameRec)) ===
+			-1
+	)
+	const toBeKept = remote.filter(
+		(rec) =>
+			local.findIndex((possiblySameRec) => comparator(rec, possiblySameRec)) !==
+			-1
+	)
+	const toBeAdded = local.filter(
+		(rec) =>
+			remote.findIndex((possiblySameRec) =>
+				comparator(possiblySameRec, rec)
+			) === -1
+	)
 
 	return { toBeDeleted, toBeKept, toBeAdded }
 }

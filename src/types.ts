@@ -18,18 +18,11 @@
 // // | 'TLSA'
 // // | 'URI read only'
 
-type ConfigRecordCommonFields = {
+export type ConfigRecordCommonFields = {
 	name: string
-} & ConfigRecordProxiedOrTTL
-
-export type ConfigRecordProxiedOrTTL =
-	| {
-			proxied: true
-	  }
-	| {
-			proxied?: false
-			ttl?: number
-	  }
+	proxied?: boolean // default: true
+	ttl?: number // default: 1
+}
 
 type ConfigRecordA = ConfigRecordCommonFields & { type: 'A'; ipv4: string }
 type ConfigRecordAAAA = ConfigRecordCommonFields & {

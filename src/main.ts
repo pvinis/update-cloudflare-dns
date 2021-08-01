@@ -137,16 +137,17 @@ const main = async () => {
 
 						case 'MX':
 							await cf.dnsRecords.add(zoneId, {
-								type: 'MX',
-								// type: rec.type,
-								// name: rec.name,
-								// content,
-								// ttl: rec.ttl ?? 1,
+								type: rec.type,
+								name: rec.name,
+								content: rec.mailServer,
+								priority: rec.priority,
+								ttl: rec.ttl ?? 1,
 							})
 							break
 
 						default:
-							absurd(rec)
+							// absurd(rec)
+							break
 					}
 					console.log('✔ ', printConfigRecord(rec, ZONE))
 				} catch (err) {

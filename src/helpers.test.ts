@@ -28,7 +28,6 @@ const mockRemoteRecord = (overrides: Partial<RemoteRecord>): RemoteRecord => {
 	return { ...initial, ...overrides }
 }
 
-
 describe(niceRecordName, () => {
 	it('works', () => {
 		const testCases: Array<[input: Partial<RemoteRecord>, expected: string]> = [
@@ -41,7 +40,6 @@ describe(niceRecordName, () => {
 		})
 	})
 })
-
 
 describe(printRemoteRecord, () => {
 	it('works', () => {
@@ -79,7 +77,12 @@ describe(printRemoteRecord, () => {
 				'mydomain.com.	1	IN	A	11.22.33.44',
 			],
 			[
-				{ type: 'MX', name: 'mail.mydomain.com', priority: 20, content: 'some.email.com' },
+				{
+					type: 'MX',
+					name: 'mail.mydomain.com',
+					priority: 20,
+					content: 'some.email.com',
+				},
 				'mail.mydomain.com.	1	IN	MX	20 some.email.com.',
 			],
 		]
@@ -89,10 +92,11 @@ describe(printRemoteRecord, () => {
 	})
 })
 
-
 describe(printConfigRecord, () => {
 	it('works', () => {
-		const testCases: Array<[input: ConfigRecord, zone: string, expected: string]> = [
+		const testCases: Array<
+			[input: ConfigRecord, zone: string, expected: string]
+		> = [
 			[
 				{ type: 'A', name: 'mail', ipv4: '11.22.33.44' },
 				'mydomain.com',
@@ -109,7 +113,12 @@ describe(printConfigRecord, () => {
 				'@	1	IN	TXT	"wow=pavlos"',
 			],
 			[
-				{ type: 'MX', name: 'mail', mailServer: 'some.email.com', priority: 20 },
+				{
+					type: 'MX',
+					name: 'mail',
+					mailServer: 'some.email.com',
+					priority: 20,
+				},
 				'mydomain.com',
 				'mail	1	IN	MX	20 some.email.com.',
 			],
@@ -120,7 +129,9 @@ describe(printConfigRecord, () => {
 	})
 
 	it('also prints in full', () => {
-		const testCases: Array<[input: ConfigRecord, zone: string, expected: string]> = [
+		const testCases: Array<
+			[input: ConfigRecord, zone: string, expected: string]
+		> = [
 			[
 				{ type: 'A', name: 'mail', ipv4: '11.22.33.44' },
 				'mydomain.com',
@@ -132,7 +143,12 @@ describe(printConfigRecord, () => {
 				'mydomain.com.	1	IN	A	11.22.33.44',
 			],
 			[
-				{ type: 'MX', name: 'mail', mailServer: 'some.email.com', priority: 20 },
+				{
+					type: 'MX',
+					name: 'mail',
+					mailServer: 'some.email.com',
+					priority: 20,
+				},
 				'mydomain.com',
 				'mail.mydomain.com.	1	IN	MX	20 some.email.com.',
 			],
@@ -142,7 +158,6 @@ describe(printConfigRecord, () => {
 		})
 	})
 })
-
 
 describe(remoteRecordToConfigRecord, () => {
 	it('works', () => {
@@ -154,24 +169,28 @@ describe(remoteRecordToConfigRecord, () => {
 			// }],
 
 			[
-				mockRemoteRecord({ type: 'A', content: '11.22.33.45' }), {
+				mockRemoteRecord({ type: 'A', content: '11.22.33.45' }),
+				{
 					type: 'A',
 					name: 'wow',
 					ipv4: '11.22.33.45',
 					proxied: true,
+					ttl: 1,
 				},
 			],
 			[
-				mockRemoteRecord({ type: 'A', content: '11.22.33.46' }), {
+				mockRemoteRecord({ type: 'A', content: '11.22.33.46' }),
+				{
 					type: 'A',
 					name: 'wow',
 					ipv4: '11.22.33.46',
 					proxied: true,
+					ttl: 1,
 				},
 			],
 			[
 				mockRemoteRecord({ type: 'A', content: '11.22.33.47', proxied: false }),
-				{ type: 'A', name: 'wow', ipv4: '11.22.33.47', proxied: false },
+				{ type: 'A', name: 'wow', ipv4: '11.22.33.47', proxied: false, ttl: 1 },
 			],
 			// expect(
 			// 	sameRecord(
@@ -190,7 +209,13 @@ describe(remoteRecordToConfigRecord, () => {
 					proxied: true,
 					ttl: 1,
 				}),
-				{ type: 'AAAA', name: 'mail', ipv6: '684d:1111:222:3333:4444:5555:6:78', proxied: true },
+				{
+					type: 'AAAA',
+					name: 'mail',
+					ipv6: '684d:1111:222:3333:4444:5555:6:78',
+					proxied: true,
+					ttl: 1,
+				},
 			],
 			[
 				mockRemoteRecord({
@@ -202,7 +227,13 @@ describe(remoteRecordToConfigRecord, () => {
 					proxied: true,
 					ttl: 1,
 				}),
-				{ type: 'AAAA', name: 'mail', ipv6: '684d:1111:222:3333:4444:5555:6:77', proxied: true },
+				{
+					type: 'AAAA',
+					name: 'mail',
+					ipv6: '684d:1111:222:3333:4444:5555:6:77',
+					proxied: true,
+					ttl: 1,
+				},
 			],
 			[
 				mockRemoteRecord({
@@ -227,7 +258,6 @@ describe(remoteRecordToConfigRecord, () => {
 	})
 })
 
-
 describe(sameRecord, () => {
 	it('works', () => {
 		expect(
@@ -235,7 +265,7 @@ describe(sameRecord, () => {
 				type: 'TXT',
 				name: 'wow',
 				content: 'pavlos',
-			}),
+			})
 		).toBe(false)
 
 		expect(
@@ -243,7 +273,7 @@ describe(sameRecord, () => {
 				type: 'A',
 				name: 'wow',
 				ipv4: '11.22.33.44',
-			}),
+			})
 		).toBe(true)
 
 		expect(
@@ -252,21 +282,21 @@ describe(sameRecord, () => {
 				name: 'wow',
 				ipv4: '11.22.33.44',
 				proxied: true,
-			}),
+			})
 		).toBe(true)
 
 		expect(
 			sameRecord(
 				mockRemoteRecord({ type: 'A', content: '11.22.33.44', proxied: false }),
-				{ type: 'A', name: 'wow', ipv4: '11.22.33.44', proxied: false },
-			),
+				{ type: 'A', name: 'wow', ipv4: '11.22.33.44', proxied: false }
+			)
 		).toBe(true)
 
 		expect(
 			sameRecord(
 				mockRemoteRecord({ type: 'A', content: '11.22.33.44', proxied: true }),
-				{ type: 'A', name: 'wow', ipv4: '11.22.33.44', proxied: false },
-			),
+				{ type: 'A', name: 'wow', ipv4: '11.22.33.44', proxied: false }
+			)
 		).toBe(false)
 
 		// expect(sameRecord({
@@ -294,12 +324,11 @@ describe(sameRecord, () => {
 					name: 'mail',
 					mailServer: 'some.email.com',
 					priority: 20,
-				},
-			),
+				}
+			)
 		).toBe(true)
 	})
 })
-
 
 // describe(partitionRecords, () => {
 // 	it('works', () => {
@@ -309,64 +338,73 @@ describe(sameRecord, () => {
 // 		expect(output.toBeAdded).toStrictEqual([4])
 // 	})
 
-// xit('really works', () => {
-// 	const remote: RemoteRecord[] = [
-// 		{
-// 			id: '01c3919a0ebb1621813aa583b2916e3e',
-// 			zone_name: 'mydomain.com',
-// 			name: 'mail.mydomain.com',
-// 			type: 'A',
-// 			content: '11.22.33.44',
-// 			proxied: true,
-// 		},
-// 		{
-// 			id: '4877b96db259761439a1f4b15d9393d2',
-// 			zone_name: 'mydomain.com',
-// 			name: 'mydomain.com',
-// 			type: 'A',
-// 			content: '11.22.33.44',
-// 			proxied: false,
-// 		},
-// 		{
-// 			id: '4a5dd05d8731962f547eb954e164c49f',
-// 			zone_name: 'mydomain.com',
-// 			name: 'mail.mydomain.com',
-// 			type: 'AAAA',
-// 			content: '684d:1111:222:3333:4444:5555:6:77',
-// 			proxied: true,
-// 		},
-// 		{
-// 			id: '7462e86c44e00149390c203f2a62dcb6',
-// 			zone_name: 'mydomain.com',
-// 			name: 'mydomain.com',
-// 			type: 'AAAA',
-// 			content: '684d:1111:222:3333:4444:5555:6:77',
-// 			proxied: false,
-// 		},
-// 		{
-// 			id: '22bfae39722e0ffd988a38fd0359987b',
-// 			zone_name: 'mydomain.com',
-// 			name: '_sub.mydomain.com',
-// 			type: 'TXT',
-// 			content: 'some-key-verification=value ?huh -thats cool!',
-// 			proxied: false,
-// 		},
-// 		{
-// 			id: 'ee023820a9ee231a33aa33259b0ee8f5',
-// 			zone_name: 'mydomain.com',
-// 			name: 'mydomain.com',
-// 			type: 'TXT',
-// 			content: 'Something else',
-// 			proxied: false,
-// 		},
-// 	]
+// 	xit('really works', () => {
+// 		const remote: RemoteRecord[] = [
+// 			{
+// 				id: '01c3919a0ebb1621813aa583b2916e3e',
+// 				zone_name: 'mydomain.com',
+// 				name: 'mail.mydomain.com',
+// 				type: 'A',
+// 				content: '11.22.33.44',
+// 				proxied: true,
+// 			},
+// 			{
+// 				id: '4877b96db259761439a1f4b15d9393d2',
+// 				zone_name: 'mydomain.com',
+// 				name: 'mydomain.com',
+// 				type: 'A',
+// 				content: '11.22.33.44',
+// 				proxied: false,
+// 			},
+// 			{
+// 				id: '4a5dd05d8731962f547eb954e164c49f',
+// 				zone_name: 'mydomain.com',
+// 				name: 'mail.mydomain.com',
+// 				type: 'AAAA',
+// 				content: '684d:1111:222:3333:4444:5555:6:77',
+// 				proxied: true,
+// 			},
+// 			{
+// 				id: '7462e86c44e00149390c203f2a62dcb6',
+// 				zone_name: 'mydomain.com',
+// 				name: 'mydomain.com',
+// 				type: 'AAAA',
+// 				content: '684d:1111:222:3333:4444:5555:6:77',
+// 				proxied: false,
+// 			},
+// 			{
+// 				id: '22bfae39722e0ffd988a38fd0359987b',
+// 				zone_name: 'mydomain.com',
+// 				name: '_sub.mydomain.com',
+// 				type: 'TXT',
+// 				content: 'some-key-verification=value ?huh -thats cool!',
+// 				proxied: false,
+// 			},
+// 			{
+// 				id: 'ee023820a9ee231a33aa33259b0ee8f5',
+// 				zone_name: 'mydomain.com',
+// 				name: 'mydomain.com',
+// 				type: 'TXT',
+// 				content: 'Something else',
+// 				proxied: false,
+// 			},
+// 		]
 
 // 		const local: ConfigRecord[] = [
 // 			{ type: 'A', name: 'mail', ipv4: '11.22.33.44' },
 // 			{ type: 'A', name: '@', ipv4: '11.22.33.44', proxied: false },
 // 			{ type: 'AAAA', name: 'mail', ipv6: '684D:1111:222:3333:4444:5555:6:77' },
-// 			{ type: 'AAAA', name: '@', ipv6: '684D:1111:222:3333:4444:5555:6:77', proxied: false },
-// 			{ type: 'TXT', name: '_sub', content: 'some-key-verification=value ?huh -thats cool!' },
+// 			{
+// 				type: 'AAAA',
+// 				name: '@',
+// 				ipv6: '684D:1111:222:3333:4444:5555:6:77',
+// 				proxied: false,
+// 			},
+// 			{
+// 				type: 'TXT',
+// 				name: '_sub',
+// 				content: 'some-key-verification=value ?huh -thats cool!',
+// 			},
 // 			{ type: 'TXT', name: '@', content: 'Something else' },
 // 		]
 
