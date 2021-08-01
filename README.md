@@ -99,4 +99,4 @@ We use [hjson](https://hjson.org/) as the configuration file format.
 
 👋 If you use and like this, consider sending me a few bucks in appreciation.
 
-<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="pvinis" data-color="#BD5FFF" data-emoji="🍕"  data-font="Poppins" data-text="Buy me a pizza" data-outline-color="#000000" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+<a href="https://www.buymeacoffee.com/pvinis" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy me a pizza" height="41" width="174"></a>
