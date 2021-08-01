@@ -1,3 +1,5 @@
+import { RemoteRecord } from 'cloudflare'
+
 import {
 	niceRecordName,
 	printConfigRecord,
@@ -5,7 +7,7 @@ import {
 	remoteRecordToConfigRecord,
 	sameRecord,
 } from './helpers'
-import { ConfigRecord, RemoteRecord } from './types'
+import { ConfigRecord } from './types'
 
 
 const mockRemoteRecord = (overrides: Partial<RemoteRecord>): RemoteRecord => {
@@ -13,10 +15,15 @@ const mockRemoteRecord = (overrides: Partial<RemoteRecord>): RemoteRecord => {
 		id: 'some-rec',
 		type: 'TXT',
 		name: 'wow.mydomain.com',
+		zone_id: 'some-id',
 		zone_name: 'mydomain.com',
 		content: 'pavlos',
 		ttl: 1,
+		proxiable: true,
 		proxied: true,
+		created_on: 'very now',
+		modified_on: 'again now',
+		locked: false,
 	}
 	return { ...initial, ...overrides }
 }
@@ -174,7 +181,7 @@ describe(remoteRecordToConfigRecord, () => {
 			// ).toBe(false)
 
 			[
-				{
+				mockRemoteRecord({
 					id: '4a5dd05d8731962f547eb954e164c49f',
 					zone_name: 'mydomain.com',
 					name: 'mail.mydomain.com',
@@ -182,11 +189,11 @@ describe(remoteRecordToConfigRecord, () => {
 					content: '684D:1111:222:3333:4444:5555:6:78', // notice the capital `D`
 					proxied: true,
 					ttl: 1,
-				},
+				}),
 				{ type: 'AAAA', name: 'mail', ipv6: '684d:1111:222:3333:4444:5555:6:78', proxied: true },
 			],
 			[
-				{
+				mockRemoteRecord({
 					id: '4a5dd05d8731962f547eb954e164c49f',
 					zone_name: 'mydomain.com',
 					name: 'mail.mydomain.com',
@@ -194,7 +201,7 @@ describe(remoteRecordToConfigRecord, () => {
 					content: '684d:1111:222:3333:4444:5555:6:77',
 					proxied: true,
 					ttl: 1,
-				},
+				}),
 				{ type: 'AAAA', name: 'mail', ipv6: '684d:1111:222:3333:4444:5555:6:77', proxied: true },
 			],
 			[

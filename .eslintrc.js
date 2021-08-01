@@ -42,7 +42,10 @@ module.exports = {
 		'no-extra-parens': OFF, // overridden
 		'@typescript-eslint/no-extra-parens': ERR, // clean up unnecessary parens
 		'space-infix-ops': OFF, // overridden
-		'@typescript-eslint/space-infix-ops': [ERR, { 'int32Hint': false }],
+		'@typescript-eslint/space-infix-ops': [ERR, { 'int32Hint': false }], // some space around infix like `=`
+		'keyword-spacing': OFF, // overridden
+		'@typescript-eslint/keyword-spacing': ERR, // we like a space between `if` and `(`
+		'space-before-blocks': ERR, // we like a space before blocks (starting with `{`)
 
 		// help with possible bugs
 		// '@typescript-eslint/await-thenable': ERR, // make sure we dont use await when we shouldnt

@@ -1,7 +1,6 @@
 import { absurd } from 'fp-ts/lib/function'
-import * as core from '@actions/core'
 import { toLowerCase } from 'fp-ts/lib/string'
-import { RemoteRecord } from 'cloudflare'
+import { RecordTypes, RemoteRecord } from 'cloudflare'
 
 import { ConfigRecord, ConfigRecordProxied } from './types'
 
@@ -20,8 +19,9 @@ const setCommonStuff = (rec: RemoteRecord): {name: ConfigRecord['name'], proxied
 	}
 }
 
+
 export const remoteRecordToConfigRecord = (rec: RemoteRecord): ConfigRecord => {
-	switch(rec.type){
+	switch (rec.type) {
 		case 'A':
 			return {
 				...setCommonStuff(rec),
@@ -33,6 +33,20 @@ export const remoteRecordToConfigRecord = (rec: RemoteRecord): ConfigRecord => {
 			return {
 				...setCommonStuff(rec),
 				type: 'AAAA',
+				ipv6: toLowerCase(rec.content),
+			}
+
+case 'CNAME':
+			return {
+				...setCommonStuff(rec),
+				type: 'CNAME',
+				ipv6: toLowerCase(rec.content),
+			}
+
+case 'HTTPS':
+			return {
+				...setCommonStuff(rec),
+				type: 'HTTPS',
 				ipv6: toLowerCase(rec.content),
 			}
 
@@ -53,7 +67,13 @@ export const remoteRecordToConfigRecord = (rec: RemoteRecord): ConfigRecord => {
 				priority: rec.priority ?? 1,
 			}
 	}
-	absurd(rec.type)
+
+	// return absurd(rec.type)
+	return {
+		...setCommonStuff(rec),
+		type: 'A',
+		ipv4: 'OH NO!',
+	}
 }
 
 export const sameRecord = (remoteRecord: RemoteRecord, configRecord: ConfigRecord): boolean => {
@@ -94,7 +114,7 @@ export const recordContent = (record: ConfigRecord): string => {
 		case 'TXT': return record.content
 		case 'MX': return record.mailServer
 	}
-	absurd(record)
+	return absurd(record)
 }
 
 export const recordTTL = (record: ConfigRecord): number => {
@@ -117,7 +137,7 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 	const name = full ? fullName : record.name
 	let content = recordContent(record)
 	const ttl = recordTTL(record)
-	switch(record.type) {
+	switch (record.type) {
 		case 'TXT':
 			content = `"${content}"`
 			break
@@ -126,15 +146,6 @@ export const printConfigRecord = (record: ConfigRecord, zone: string, full: bool
 			break
 	}
 	return `${name}\t${ttl}\tIN\t${record.type}\t${content}`
-}
-
-
-export const inputOrEnv = (inputName: string, envName: string) => {
-	const input = core.getInput(inputName)
-	if (input !== '') return input
-
-	const env = process.env[envName]
-	return env
 }
 
 
