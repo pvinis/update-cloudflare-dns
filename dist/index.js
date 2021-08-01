@@ -1,35 +1,14 @@
-require('./sourcemap-register.js');module.exports =
-/******/ (() => { // webpackBootstrap
+require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 650:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.partitionRecords = exports.inputOrEnv = exports.printConfigRecord = exports.printRemoteRecord = exports.recordContent = exports.sameRecord = exports.niceRecordName = void 0;
-const function_1 = __nccwpck_require__(6985);
-const core = __importStar(__nccwpck_require__(2186));
+exports.partitionRecords = exports.printConfigRecord = exports.printRemoteRecord = exports.recordTTL = exports.recordContent = exports.sameRecord = exports.remoteRecordToConfigRecord = exports.niceRecordName = void 0;
+const string_1 = __nccwpck_require__(5189);
 const niceRecordName = (rec) => {
     const removeZone = rec.name.replace(rec.zone_name, '');
     if (removeZone === '')
@@ -37,6 +16,46 @@ const niceRecordName = (rec) => {
     return removeZone.slice(0, -1);
 };
 exports.niceRecordName = niceRecordName;
+const setCommonStuff = (rec) => {
+    return {
+        name: exports.niceRecordName(rec),
+        proxied: rec.proxied,
+        ttl: rec.ttl,
+    };
+};
+const remoteRecordToConfigRecord = (rec) => {
+    var _c;
+    switch (rec.type) {
+        case 'A':
+            return Object.assign(Object.assign({}, setCommonStuff(rec)), { type: 'A', ipv4: rec.content });
+        case 'AAAA':
+            return Object.assign(Object.assign({}, setCommonStuff(rec)), { type: 'AAAA', ipv6: string_1.toLowerCase(rec.content) });
+        // case 'CNAME':
+        // 	return {
+        // 		...setCommonStuff(rec),
+        // 		type: 'CNAME',
+        // 		ipv6: toLowerCase(rec.content),
+        // 	}
+        // case 'HTTPS':
+        // 	return {
+        // 		...setCommonStuff(rec),
+        // 		type: 'HTTPS',
+        // 		ipv6: toLowerCase(rec.content),
+        // 	}
+        case 'TXT':
+            return Object.assign(Object.assign({ type: rec.type }, setCommonStuff(rec)), { name: '', content: '', ttl: 1 });
+        case 'MX':
+            return {
+                type: rec.type,
+                name: exports.niceRecordName(rec),
+                mailServer: rec.content,
+                priority: (_c = rec.priority) !== null && _c !== void 0 ? _c : 1,
+            };
+    }
+    // return absurd(rec.type)
+    return Object.assign(Object.assign({}, setCommonStuff(rec)), { type: 'A', ipv4: 'OH NO!' });
+};
+exports.remoteRecordToConfigRecord = remoteRecordToConfigRecord;
 const sameRecord = (remoteRecord, configRecord) => {
     var _c, _d;
     if (remoteRecord.type !== configRecord.type)
@@ -57,80 +76,72 @@ const sameRecord = (remoteRecord, configRecord) => {
             if (remoteRecord.proxied !== ((_d = configRecord.proxied) !== null && _d !== void 0 ? _d : true))
                 return false;
             break;
-        // case "CNAME":
-        // case "HTTPS":
         case 'TXT':
             if (remoteRecord.content !== configRecord.content)
                 return false;
+            if (remoteRecord.ttl !== configRecord.ttl)
+                return false;
             break;
-        // case "SRV":
-        // case "LOC":
-        //
         case 'MX':
             if (remoteRecord.content !== configRecord.mailServer)
                 return false;
             if (remoteRecord.priority !== configRecord.priority)
                 return false;
             break;
-        // case "NS":
-        // case "SPF":
-        // case "CERT":
-        // case "DNSKEY":
-        // case "DS":
-        // case "NAPTR":
-        // case "SMIMEA":
-        // case "SSHFP":
-        // case "SVCB":
-        // case "TLSA":
-        // case "URI read only":
-        default: function_1.absurd(configRecord);
     }
     return true;
 };
 exports.sameRecord = sameRecord;
 const recordContent = (record) => {
     switch (record.type) {
-        case 'A': return record.ipv4;
-        case 'AAAA': return record.ipv6;
-        case 'TXT': return record.content;
-        case 'MX': return record.mailServer;
+        case 'A':
+            return record.ipv4;
+        case 'AAAA':
+            return record.ipv6;
+        case 'TXT':
+            return record.content;
+        case 'MX':
+            return record.mailServer;
     }
-    function_1.absurd(record);
+    // return absurd(record)
+    return 'OH NO';
 };
 exports.recordContent = recordContent;
+const recordTTL = (record) => {
+    var _c;
+    if (record.type === 'TXT') {
+        return (_c = record.ttl) !== null && _c !== void 0 ? _c : 1;
+    }
+    return 1;
+};
+exports.recordTTL = recordTTL;
 const printRemoteRecord = (record, full = false) => {
     const name = full ? `${record.name}.` : exports.niceRecordName(record);
-    return `${name}\t1\tIN\t${record.type}\t${record.content}`;
+    return `${name}\t${record.ttl}\tIN\t${record.type}\t${record.priority !== undefined ? `${record.priority} ` : ''}${record.content}${record.type === 'MX' ? '.' : ''}`;
 };
 exports.printRemoteRecord = printRemoteRecord;
 const printConfigRecord = (record, zone, full = false) => {
     const fullName = `${record.name === '@' ? zone : `${record.name}.${zone}`}.`;
     const name = full ? fullName : record.name;
     let content = exports.recordContent(record);
+    const ttl = exports.recordTTL(record);
     switch (record.type) {
         case 'TXT':
             content = `"${content}"`;
             break;
         case 'MX':
-            content = `${content}.`;
+            content = `${record.priority} ${content}.`;
             break;
-        default: break;
     }
-    return `${name}\t1\tIN\t${record.type}\t${content}`;
+    return `${name}\t${ttl}\tIN\t${record.type}\t${content}`;
 };
 exports.printConfigRecord = printConfigRecord;
-const inputOrEnv = (inputName, envName) => {
-    const input = core.getInput(inputName);
-    if (input !== '')
-        return input;
-    const env = process.env[envName];
-    return env;
-};
-exports.inputOrEnv = inputOrEnv;
 const partitionRecords = (remote, local, comparator) => {
-    const toBeDeleted = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) === -1);
-    const toBeKept = remote.filter(rec => local.findIndex(possiblySameRec => comparator(rec, possiblySameRec)) !== -1);
-    const toBeAdded = local.filter(rec => remote.findIndex(possiblySameRec => comparator(possiblySameRec, rec)) === -1);
+    const toBeDeleted = remote.filter((rec) => local.findIndex((possiblySameRec) => comparator(rec, possiblySameRec)) ===
+        -1);
+    const toBeKept = remote.filter((rec) => local.findIndex((possiblySameRec) => comparator(rec, possiblySameRec)) !==
+        -1);
+    const toBeAdded = local.filter((rec) => remote.findIndex((possiblySameRec) => comparator(possiblySameRec, rec)) === -1);
     return { toBeDeleted, toBeKept, toBeAdded };
 };
 exports.partitionRecords = partitionRecords;
@@ -181,11 +192,18 @@ const process_1 = __nccwpck_require__(1765);
 const hjson_1 = __importDefault(__nccwpck_require__(24));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const cloudflare_1 = __importDefault(__nccwpck_require__(5277));
-const function_1 = __nccwpck_require__(6985);
 const helpers_1 = __nccwpck_require__(650);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 __nccwpck_require__(2437).config();
+const inputOrEnv = (inputName, envName) => {
+    const input = core.getInput(inputName);
+    if (input !== '')
+        return input;
+    const env = process.env[envName];
+    return env;
+};
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    const ZONE = helpers_1.inputOrEnv('zone', 'ZONE');
+    const ZONE = inputOrEnv('zone', 'ZONE');
     if (ZONE === undefined) {
         console.log('Zone not set. Make sure to provide one in the GitHub action.');
         core.setFailed('Zone not set.');
@@ -196,7 +214,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     // Get the JSON webhook payload for the event that triggered the workflow
     //   const payload = JSON.stringify(github.context.payload, undefined, 2)
     //   console.log(`The event payload: ${payload}`);
-    const TOKEN = helpers_1.inputOrEnv('cloudflareToken', 'CLOUDFLARE_TOKEN');
+    const TOKEN = inputOrEnv('cloudflareToken', 'CLOUDFLARE_TOKEN');
     if (TOKEN === undefined) {
         console.log('Cloudflare token not found. Make sure to add one in GitHub environments.');
         core.setFailed('Cloudflare token not found.');
@@ -213,7 +231,9 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const response = yield cf.zones.browse();
         const zones = response.result;
-        const theZones = zones.filter(zone => zone.name === ZONE).map(zone => zone.id);
+        const theZones = zones
+            .filter((zone) => zone.name === ZONE)
+            .map((zone) => zone.id);
         if (theZones.length === 0) {
             console.log(`No zones found with name: ${ZONE}.`);
             console.log('Make sure you have it right in DNS-RECORDS.hjson.');
@@ -244,12 +264,12 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         }
     })));
     console.log('Records that will be kept:');
-    toBeKept.forEach(rec => {
+    toBeKept.forEach((rec) => {
         console.log('✔ ', helpers_1.printRemoteRecord(rec));
     });
     console.log('Records that will be added:');
     yield Promise.all(toBeAdded.map((rec) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a;
+        var _a, _b, _c;
         if (!DRY_RUN) {
             try {
                 const content = helpers_1.recordContent(rec);
@@ -260,6 +280,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                             type: rec.type,
                             name: rec.name,
                             content,
+                            ttl: 1,
                             proxied: (_a = rec.proxied) !== null && _a !== void 0 ? _a : true,
                         });
                         break;
@@ -268,9 +289,21 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                             type: rec.type,
                             name: rec.name,
                             content,
+                            ttl: (_b = rec.ttl) !== null && _b !== void 0 ? _b : 1,
                         });
                         break;
-                    default: function_1.absurd(rec);
+                    case 'MX':
+                        yield cf.dnsRecords.add(zoneId, {
+                            type: rec.type,
+                            name: rec.name,
+                            content: rec.mailServer,
+                            priority: rec.priority,
+                            ttl: (_c = rec.ttl) !== null && _c !== void 0 ? _c : 1,
+                        });
+                        break;
+                    default:
+                        // absurd(rec)
+                        break;
                 }
                 console.log('✔ ', helpers_1.printConfigRecord(rec, ZONE));
             }
@@ -296,14 +329,27 @@ main();
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.issue = exports.issueCommand = void 0;
 const os = __importStar(__nccwpck_require__(2087));
 const utils_1 = __nccwpck_require__(5278);
 /**
@@ -382,6 +428,25 @@ function escapeProperty(s) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -391,14 +456,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 const command_1 = __nccwpck_require__(7351);
 const file_command_1 = __nccwpck_require__(717);
 const utils_1 = __nccwpck_require__(5278);
@@ -465,7 +524,9 @@ function addPath(inputPath) {
 }
 exports.addPath = addPath;
 /**
- * Gets the value of an input.  The value is also trimmed.
+ * Gets the value of an input.
+ * Unless trimWhitespace is set to false in InputOptions, the value is also trimmed.
+ * Returns an empty string if the value is not defined.
  *
  * @param     name     name of the input to get
  * @param     options  optional. See InputOptions.
@@ -476,9 +537,49 @@ function getInput(name, options) {
     if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
     }
+    if (options && options.trimWhitespace === false) {
+        return val;
+    }
     return val.trim();
 }
 exports.getInput = getInput;
+/**
+ * Gets the values of an multiline input.  Each value is also trimmed.
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   string[]
+ *
+ */
+function getMultilineInput(name, options) {
+    const inputs = getInput(name, options)
+        .split('\n')
+        .filter(x => x !== '');
+    return inputs;
+}
+exports.getMultilineInput = getMultilineInput;
+/**
+ * Gets the input value of the boolean type in the YAML 1.2 "core schema" specification.
+ * Support boolean input list: `true | True | TRUE | false | False | FALSE` .
+ * The return value is also in boolean type.
+ * ref: https://yaml.org/spec/1.2/spec.html#id2804923
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   boolean
+ */
+function getBooleanInput(name, options) {
+    const trueValue = ['true', 'True', 'TRUE'];
+    const falseValue = ['false', 'False', 'FALSE'];
+    const val = getInput(name, options);
+    if (trueValue.includes(val))
+        return true;
+    if (falseValue.includes(val))
+        return false;
+    throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
+        `Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
+}
+exports.getBooleanInput = getBooleanInput;
 /**
  * Sets the value of an output.
  *
@@ -487,6 +588,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
@@ -628,14 +730,27 @@ exports.getState = getState;
 "use strict";
 
 // For internal use, subject to change.
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.issueCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(5747));
@@ -666,6 +781,7 @@ exports.issueCommand = issueCommand;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.toCommandValue = void 0;
 /**
  * Sanitizes an input into a string so it can be passed into issueCommand safely
  * @param input input to sanitize into a string
@@ -684,240 +800,238 @@ exports.toCommandValue = toCommandValue;
 
 /***/ }),
 
-/***/ 8049:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 9690:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
 "use strict";
 
-__nccwpck_require__(74);
-const inherits = __nccwpck_require__(1669).inherits;
-const promisify = __nccwpck_require__(7525);
-const EventEmitter = __nccwpck_require__(8614).EventEmitter;
-
-module.exports = Agent;
-
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const events_1 = __nccwpck_require__(8614);
+const debug_1 = __importDefault(__nccwpck_require__(8237));
+const promisify_1 = __importDefault(__nccwpck_require__(6570));
+const debug = debug_1.default('agent-base');
 function isAgent(v) {
-  return v && typeof v.addRequest === 'function';
+    return Boolean(v) && typeof v.addRequest === 'function';
 }
-
-/**
- * Base `http.Agent` implementation.
- * No pooling/keep-alive is implemented by default.
- *
- * @param {Function} callback
- * @api public
- */
-function Agent(callback, _opts) {
-  if (!(this instanceof Agent)) {
-    return new Agent(callback, _opts);
-  }
-
-  EventEmitter.call(this);
-
-  // The callback gets promisified if it has 3 parameters
-  // (i.e. it has a callback function) lazily
-  this._promisifiedCallback = false;
-
-  let opts = _opts;
-  if ('function' === typeof callback) {
-    this.callback = callback;
-  } else if (callback) {
-    opts = callback;
-  }
-
-  // timeout for the socket to be returned from the callback
-  this.timeout = (opts && opts.timeout) || null;
-
-  this.options = opts;
+function isSecureEndpoint() {
+    const { stack } = new Error();
+    if (typeof stack !== 'string')
+        return false;
+    return stack.split('\n').some(l => l.indexOf('(https.js:') !== -1 || l.indexOf('node:https:') !== -1);
 }
-inherits(Agent, EventEmitter);
-
-/**
- * Override this function in your subclass!
- */
-Agent.prototype.callback = function callback(req, opts) {
-  throw new Error(
-    '"agent-base" has no default implementation, you must subclass and override `callback()`'
-  );
-};
-
-/**
- * Called by node-core's "_http_client.js" module when creating
- * a new HTTP request with this Agent instance.
- *
- * @api public
- */
-Agent.prototype.addRequest = function addRequest(req, _opts) {
-  const ownOpts = Object.assign({}, _opts);
-
-  // Set default `host` for HTTP to localhost
-  if (null == ownOpts.host) {
-    ownOpts.host = 'localhost';
-  }
-
-  // Set default `port` for HTTP if none was explicitly specified
-  if (null == ownOpts.port) {
-    ownOpts.port = ownOpts.secureEndpoint ? 443 : 80;
-  }
-
-  const opts = Object.assign({}, this.options, ownOpts);
-
-  if (opts.host && opts.path) {
-    // If both a `host` and `path` are specified then it's most likely the
-    // result of a `url.parse()` call... we need to remove the `path` portion so
-    // that `net.connect()` doesn't attempt to open that as a unix socket file.
-    delete opts.path;
-  }
-
-  delete opts.agent;
-  delete opts.hostname;
-  delete opts._defaultAgent;
-  delete opts.defaultPort;
-  delete opts.createConnection;
-
-  // Hint to use "Connection: close"
-  // XXX: non-documented `http` module API :(
-  req._last = true;
-  req.shouldKeepAlive = false;
-
-  // Create the `stream.Duplex` instance
-  let timeout;
-  let timedOut = false;
-  const timeoutMs = this.timeout;
-  const freeSocket = this.freeSocket;
-
-  function onerror(err) {
-    if (req._hadError) return;
-    req.emit('error', err);
-    // For Safety. Some additional errors might fire later on
-    // and we need to make sure we don't double-fire the error event.
-    req._hadError = true;
-  }
-
-  function ontimeout() {
-    timeout = null;
-    timedOut = true;
-    const err = new Error(
-      'A "socket" was not created for HTTP request before ' + timeoutMs + 'ms'
-    );
-    err.code = 'ETIMEOUT';
-    onerror(err);
-  }
-
-  function callbackError(err) {
-    if (timedOut) return;
-    if (timeout != null) {
-      clearTimeout(timeout);
-      timeout = null;
+function createAgent(callback, opts) {
+    return new createAgent.Agent(callback, opts);
+}
+(function (createAgent) {
+    /**
+     * Base `http.Agent` implementation.
+     * No pooling/keep-alive is implemented by default.
+     *
+     * @param {Function} callback
+     * @api public
+     */
+    class Agent extends events_1.EventEmitter {
+        constructor(callback, _opts) {
+            super();
+            let opts = _opts;
+            if (typeof callback === 'function') {
+                this.callback = callback;
+            }
+            else if (callback) {
+                opts = callback;
+            }
+            // Timeout for the socket to be returned from the callback
+            this.timeout = null;
+            if (opts && typeof opts.timeout === 'number') {
+                this.timeout = opts.timeout;
+            }
+            // These aren't actually used by `agent-base`, but are required
+            // for the TypeScript definition files in `@types/node` :/
+            this.maxFreeSockets = 1;
+            this.maxSockets = 1;
+            this.maxTotalSockets = Infinity;
+            this.sockets = {};
+            this.freeSockets = {};
+            this.requests = {};
+            this.options = {};
+        }
+        get defaultPort() {
+            if (typeof this.explicitDefaultPort === 'number') {
+                return this.explicitDefaultPort;
+            }
+            return isSecureEndpoint() ? 443 : 80;
+        }
+        set defaultPort(v) {
+            this.explicitDefaultPort = v;
+        }
+        get protocol() {
+            if (typeof this.explicitProtocol === 'string') {
+                return this.explicitProtocol;
+            }
+            return isSecureEndpoint() ? 'https:' : 'http:';
+        }
+        set protocol(v) {
+            this.explicitProtocol = v;
+        }
+        callback(req, opts, fn) {
+            throw new Error('"agent-base" has no default implementation, you must subclass and override `callback()`');
+        }
+        /**
+         * Called by node-core's "_http_client.js" module when creating
+         * a new HTTP request with this Agent instance.
+         *
+         * @api public
+         */
+        addRequest(req, _opts) {
+            const opts = Object.assign({}, _opts);
+            if (typeof opts.secureEndpoint !== 'boolean') {
+                opts.secureEndpoint = isSecureEndpoint();
+            }
+            if (opts.host == null) {
+                opts.host = 'localhost';
+            }
+            if (opts.port == null) {
+                opts.port = opts.secureEndpoint ? 443 : 80;
+            }
+            if (opts.protocol == null) {
+                opts.protocol = opts.secureEndpoint ? 'https:' : 'http:';
+            }
+            if (opts.host && opts.path) {
+                // If both a `host` and `path` are specified then it's most
+                // likely the result of a `url.parse()` call... we need to
+                // remove the `path` portion so that `net.connect()` doesn't
+                // attempt to open that as a unix socket file.
+                delete opts.path;
+            }
+            delete opts.agent;
+            delete opts.hostname;
+            delete opts._defaultAgent;
+            delete opts.defaultPort;
+            delete opts.createConnection;
+            // Hint to use "Connection: close"
+            // XXX: non-documented `http` module API :(
+            req._last = true;
+            req.shouldKeepAlive = false;
+            let timedOut = false;
+            let timeoutId = null;
+            const timeoutMs = opts.timeout || this.timeout;
+            const onerror = (err) => {
+                if (req._hadError)
+                    return;
+                req.emit('error', err);
+                // For Safety. Some additional errors might fire later on
+                // and we need to make sure we don't double-fire the error event.
+                req._hadError = true;
+            };
+            const ontimeout = () => {
+                timeoutId = null;
+                timedOut = true;
+                const err = new Error(`A "socket" was not created for HTTP request before ${timeoutMs}ms`);
+                err.code = 'ETIMEOUT';
+                onerror(err);
+            };
+            const callbackError = (err) => {
+                if (timedOut)
+                    return;
+                if (timeoutId !== null) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                onerror(err);
+            };
+            const onsocket = (socket) => {
+                if (timedOut)
+                    return;
+                if (timeoutId != null) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                if (isAgent(socket)) {
+                    // `socket` is actually an `http.Agent` instance, so
+                    // relinquish responsibility for this `req` to the Agent
+                    // from here on
+                    debug('Callback returned another Agent instance %o', socket.constructor.name);
+                    socket.addRequest(req, opts);
+                    return;
+                }
+                if (socket) {
+                    socket.once('free', () => {
+                        this.freeSocket(socket, opts);
+                    });
+                    req.onSocket(socket);
+                    return;
+                }
+                const err = new Error(`no Duplex stream was returned to agent-base for \`${req.method} ${req.path}\``);
+                onerror(err);
+            };
+            if (typeof this.callback !== 'function') {
+                onerror(new Error('`callback` is not defined'));
+                return;
+            }
+            if (!this.promisifiedCallback) {
+                if (this.callback.length >= 3) {
+                    debug('Converting legacy callback function to promise');
+                    this.promisifiedCallback = promisify_1.default(this.callback);
+                }
+                else {
+                    this.promisifiedCallback = this.callback;
+                }
+            }
+            if (typeof timeoutMs === 'number' && timeoutMs > 0) {
+                timeoutId = setTimeout(ontimeout, timeoutMs);
+            }
+            if ('port' in opts && typeof opts.port !== 'number') {
+                opts.port = Number(opts.port);
+            }
+            try {
+                debug('Resolving socket for %o request: %o', opts.protocol, `${req.method} ${req.path}`);
+                Promise.resolve(this.promisifiedCallback(req, opts)).then(onsocket, callbackError);
+            }
+            catch (err) {
+                Promise.reject(err).catch(callbackError);
+            }
+        }
+        freeSocket(socket, opts) {
+            debug('Freeing socket %o %o', socket.constructor.name, opts);
+            socket.destroy();
+        }
+        destroy() {
+            debug('Destroying agent %o', this.constructor.name);
+        }
     }
-    onerror(err);
-  }
-
-  function onsocket(socket) {
-    if (timedOut) return;
-    if (timeout != null) {
-      clearTimeout(timeout);
-      timeout = null;
-    }
-    if (isAgent(socket)) {
-      // `socket` is actually an http.Agent instance, so relinquish
-      // responsibility for this `req` to the Agent from here on
-      socket.addRequest(req, opts);
-    } else if (socket) {
-      function onfree() {
-        freeSocket(socket, opts);
-      }
-      socket.on('free', onfree);
-      req.onSocket(socket);
-    } else {
-      const err = new Error(
-        'no Duplex stream was returned to agent-base for `' + req.method + ' ' + req.path + '`'
-      );
-      onerror(err);
-    }
-  }
-
-  if (!this._promisifiedCallback && this.callback.length >= 3) {
-    // Legacy callback function - convert to a Promise
-    this.callback = promisify(this.callback, this);
-    this._promisifiedCallback = true;
-  }
-
-  if (timeoutMs > 0) {
-    timeout = setTimeout(ontimeout, timeoutMs);
-  }
-
-  try {
-    Promise.resolve(this.callback(req, opts)).then(onsocket, callbackError);
-  } catch (err) {
-    Promise.reject(err).catch(callbackError);
-  }
-};
-
-Agent.prototype.freeSocket = function freeSocket(socket, opts) {
-  // TODO reuse sockets
-  socket.destroy();
-};
-
+    createAgent.Agent = Agent;
+    // So that `instanceof` works correctly
+    createAgent.prototype = createAgent.Agent.prototype;
+})(createAgent || (createAgent = {}));
+module.exports = createAgent;
+//# sourceMappingURL=index.js.map
 
 /***/ }),
 
-/***/ 74:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 6570:
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-const url = __nccwpck_require__(8835);
-const https = __nccwpck_require__(7211);
-
-/**
- * This currently needs to be applied to all Node.js versions
- * in order to determine if the `req` is an HTTP or HTTPS request.
- *
- * There is currently no PR attempting to move this property upstream.
- */
-const patchMarker = "__agent_base_https_request_patched__";
-if (!https.request[patchMarker]) {
-  https.request = (function(request) {
-    return function(_options, cb) {
-      let options;
-      if (typeof _options === 'string') {
-        options = url.parse(_options);
-      } else {
-        options = Object.assign({}, _options);
-      }
-      if (null == options.port) {
-        options.port = 443;
-      }
-      options.secureEndpoint = true;
-      return request.call(https, options, cb);
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+function promisify(fn) {
+    return function (req, opts) {
+        return new Promise((resolve, reject) => {
+            fn.call(this, req, opts, (err, rtn) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve(rtn);
+                }
+            });
+        });
     };
-  })(https.request);
-  https.request[patchMarker] = true;
 }
-
-/**
- * This is needed for Node.js >= 9.0.0 to make sure `https.get()` uses the
- * patched `https.request()`.
- *
- * Ref: https://github.com/nodejs/node/commit/5118f31
- */
-https.get = function (_url, _options, cb) {
-    let options;
-    if (typeof _url === 'string' && _options && typeof _options !== 'function') {
-      options = Object.assign({}, url.parse(_url), _options);
-    } else if (!_options && !cb) {
-      options = _url;
-    } else if (!cb) {
-      options = _url;
-      cb = _options;
-    }
-
-  const req = https.request(options, cb);
-  req.end();
-  return req;
-};
-
+exports.default = promisify;
+//# sourceMappingURL=promisify.js.map
 
 /***/ }),
 
@@ -1590,7 +1704,7 @@ module.exports = function(spec) {
 
 
 const shouldProxy = __nccwpck_require__(5882);
-const HttpsProxyAgent = __nccwpck_require__(3436);
+const HttpsProxyAgent = __nccwpck_require__(7219);
 
 /**
  * proxyAgent returns an HTTPS agent to use to access the base URL.
@@ -2854,6 +2968,850 @@ module.exports = function createErrorClass(className, setup) {
 
 /***/ }),
 
+/***/ 8222:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+/* eslint-env browser */
+
+/**
+ * This is the web browser implementation of `debug()`.
+ */
+
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = localstorage();
+exports.destroy = (() => {
+	let warned = false;
+
+	return () => {
+		if (!warned) {
+			warned = true;
+			console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+		}
+	};
+})();
+
+/**
+ * Colors.
+ */
+
+exports.colors = [
+	'#0000CC',
+	'#0000FF',
+	'#0033CC',
+	'#0033FF',
+	'#0066CC',
+	'#0066FF',
+	'#0099CC',
+	'#0099FF',
+	'#00CC00',
+	'#00CC33',
+	'#00CC66',
+	'#00CC99',
+	'#00CCCC',
+	'#00CCFF',
+	'#3300CC',
+	'#3300FF',
+	'#3333CC',
+	'#3333FF',
+	'#3366CC',
+	'#3366FF',
+	'#3399CC',
+	'#3399FF',
+	'#33CC00',
+	'#33CC33',
+	'#33CC66',
+	'#33CC99',
+	'#33CCCC',
+	'#33CCFF',
+	'#6600CC',
+	'#6600FF',
+	'#6633CC',
+	'#6633FF',
+	'#66CC00',
+	'#66CC33',
+	'#9900CC',
+	'#9900FF',
+	'#9933CC',
+	'#9933FF',
+	'#99CC00',
+	'#99CC33',
+	'#CC0000',
+	'#CC0033',
+	'#CC0066',
+	'#CC0099',
+	'#CC00CC',
+	'#CC00FF',
+	'#CC3300',
+	'#CC3333',
+	'#CC3366',
+	'#CC3399',
+	'#CC33CC',
+	'#CC33FF',
+	'#CC6600',
+	'#CC6633',
+	'#CC9900',
+	'#CC9933',
+	'#CCCC00',
+	'#CCCC33',
+	'#FF0000',
+	'#FF0033',
+	'#FF0066',
+	'#FF0099',
+	'#FF00CC',
+	'#FF00FF',
+	'#FF3300',
+	'#FF3333',
+	'#FF3366',
+	'#FF3399',
+	'#FF33CC',
+	'#FF33FF',
+	'#FF6600',
+	'#FF6633',
+	'#FF9900',
+	'#FF9933',
+	'#FFCC00',
+	'#FFCC33'
+];
+
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
+
+// eslint-disable-next-line complexity
+function useColors() {
+	// NB: In an Electron preload script, document will be defined but not fully
+	// initialized. Since we know we're in Chrome, we'll just detect this case
+	// explicitly
+	if (typeof window !== 'undefined' && window.process && (window.process.type === 'renderer' || window.process.__nwjs)) {
+		return true;
+	}
+
+	// Internet Explorer and Edge do not support colors.
+	if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
+		return false;
+	}
+
+	// Is webkit? http://stackoverflow.com/a/16459606/376773
+	// document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+	return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
+		// Is firebug? http://stackoverflow.com/a/398120/376773
+		(typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
+		// Is firefox >= v31?
+		// https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
+		// Double check webkit in userAgent just in case we are in a worker
+		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
+}
+
+/**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+	args[0] = (this.useColors ? '%c' : '') +
+		this.namespace +
+		(this.useColors ? ' %c' : ' ') +
+		args[0] +
+		(this.useColors ? '%c ' : ' ') +
+		'+' + module.exports.humanize(this.diff);
+
+	if (!this.useColors) {
+		return;
+	}
+
+	const c = 'color: ' + this.color;
+	args.splice(1, 0, c, 'color: inherit');
+
+	// The final "%c" is somewhat tricky, because there could be other
+	// arguments passed either before or after the %c, so we need to
+	// figure out the correct index to insert the CSS into
+	let index = 0;
+	let lastC = 0;
+	args[0].replace(/%[a-zA-Z%]/g, match => {
+		if (match === '%%') {
+			return;
+		}
+		index++;
+		if (match === '%c') {
+			// We only are interested in the *last* %c
+			// (the user may have provided their own)
+			lastC = index;
+		}
+	});
+
+	args.splice(lastC, 0, c);
+}
+
+/**
+ * Invokes `console.debug()` when available.
+ * No-op when `console.debug` is not a "function".
+ * If `console.debug` is not available, falls back
+ * to `console.log`.
+ *
+ * @api public
+ */
+exports.log = console.debug || console.log || (() => {});
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+function save(namespaces) {
+	try {
+		if (namespaces) {
+			exports.storage.setItem('debug', namespaces);
+		} else {
+			exports.storage.removeItem('debug');
+		}
+	} catch (error) {
+		// Swallow
+		// XXX (@Qix-) should we be logging these?
+	}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+function load() {
+	let r;
+	try {
+		r = exports.storage.getItem('debug');
+	} catch (error) {
+		// Swallow
+		// XXX (@Qix-) should we be logging these?
+	}
+
+	// If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+	if (!r && typeof process !== 'undefined' && 'env' in process) {
+		r = process.env.DEBUG;
+	}
+
+	return r;
+}
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage() {
+	try {
+		// TVMLKit (Apple TV JS Runtime) does not have a window object, just localStorage in the global context
+		// The Browser also has localStorage in the global context.
+		return localStorage;
+	} catch (error) {
+		// Swallow
+		// XXX (@Qix-) should we be logging these?
+	}
+}
+
+module.exports = __nccwpck_require__(6243)(exports);
+
+const {formatters} = module.exports;
+
+/**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+
+formatters.j = function (v) {
+	try {
+		return JSON.stringify(v);
+	} catch (error) {
+		return '[UnexpectedJSONParseError]: ' + error.message;
+	}
+};
+
+
+/***/ }),
+
+/***/ 6243:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+
+/**
+ * This is the common logic for both the Node.js and web browser
+ * implementations of `debug()`.
+ */
+
+function setup(env) {
+	createDebug.debug = createDebug;
+	createDebug.default = createDebug;
+	createDebug.coerce = coerce;
+	createDebug.disable = disable;
+	createDebug.enable = enable;
+	createDebug.enabled = enabled;
+	createDebug.humanize = __nccwpck_require__(900);
+	createDebug.destroy = destroy;
+
+	Object.keys(env).forEach(key => {
+		createDebug[key] = env[key];
+	});
+
+	/**
+	* The currently active debug mode names, and names to skip.
+	*/
+
+	createDebug.names = [];
+	createDebug.skips = [];
+
+	/**
+	* Map of special "%n" handling functions, for the debug "format" argument.
+	*
+	* Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
+	*/
+	createDebug.formatters = {};
+
+	/**
+	* Selects a color for a debug namespace
+	* @param {String} namespace The namespace string for the for the debug instance to be colored
+	* @return {Number|String} An ANSI color code for the given namespace
+	* @api private
+	*/
+	function selectColor(namespace) {
+		let hash = 0;
+
+		for (let i = 0; i < namespace.length; i++) {
+			hash = ((hash << 5) - hash) + namespace.charCodeAt(i);
+			hash |= 0; // Convert to 32bit integer
+		}
+
+		return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
+	}
+	createDebug.selectColor = selectColor;
+
+	/**
+	* Create a debugger with the given `namespace`.
+	*
+	* @param {String} namespace
+	* @return {Function}
+	* @api public
+	*/
+	function createDebug(namespace) {
+		let prevTime;
+		let enableOverride = null;
+		let namespacesCache;
+		let enabledCache;
+
+		function debug(...args) {
+			// Disabled?
+			if (!debug.enabled) {
+				return;
+			}
+
+			const self = debug;
+
+			// Set `diff` timestamp
+			const curr = Number(new Date());
+			const ms = curr - (prevTime || curr);
+			self.diff = ms;
+			self.prev = prevTime;
+			self.curr = curr;
+			prevTime = curr;
+
+			args[0] = createDebug.coerce(args[0]);
+
+			if (typeof args[0] !== 'string') {
+				// Anything else let's inspect with %O
+				args.unshift('%O');
+			}
+
+			// Apply any `formatters` transformations
+			let index = 0;
+			args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
+				// If we encounter an escaped % then don't increase the array index
+				if (match === '%%') {
+					return '%';
+				}
+				index++;
+				const formatter = createDebug.formatters[format];
+				if (typeof formatter === 'function') {
+					const val = args[index];
+					match = formatter.call(self, val);
+
+					// Now we need to remove `args[index]` since it's inlined in the `format`
+					args.splice(index, 1);
+					index--;
+				}
+				return match;
+			});
+
+			// Apply env-specific formatting (colors, etc.)
+			createDebug.formatArgs.call(self, args);
+
+			const logFn = self.log || createDebug.log;
+			logFn.apply(self, args);
+		}
+
+		debug.namespace = namespace;
+		debug.useColors = createDebug.useColors();
+		debug.color = createDebug.selectColor(namespace);
+		debug.extend = extend;
+		debug.destroy = createDebug.destroy; // XXX Temporary. Will be removed in the next major release.
+
+		Object.defineProperty(debug, 'enabled', {
+			enumerable: true,
+			configurable: false,
+			get: () => {
+				if (enableOverride !== null) {
+					return enableOverride;
+				}
+				if (namespacesCache !== createDebug.namespaces) {
+					namespacesCache = createDebug.namespaces;
+					enabledCache = createDebug.enabled(namespace);
+				}
+
+				return enabledCache;
+			},
+			set: v => {
+				enableOverride = v;
+			}
+		});
+
+		// Env-specific initialization logic for debug instances
+		if (typeof createDebug.init === 'function') {
+			createDebug.init(debug);
+		}
+
+		return debug;
+	}
+
+	function extend(namespace, delimiter) {
+		const newDebug = createDebug(this.namespace + (typeof delimiter === 'undefined' ? ':' : delimiter) + namespace);
+		newDebug.log = this.log;
+		return newDebug;
+	}
+
+	/**
+	* Enables a debug mode by namespaces. This can include modes
+	* separated by a colon and wildcards.
+	*
+	* @param {String} namespaces
+	* @api public
+	*/
+	function enable(namespaces) {
+		createDebug.save(namespaces);
+		createDebug.namespaces = namespaces;
+
+		createDebug.names = [];
+		createDebug.skips = [];
+
+		let i;
+		const split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
+		const len = split.length;
+
+		for (i = 0; i < len; i++) {
+			if (!split[i]) {
+				// ignore empty strings
+				continue;
+			}
+
+			namespaces = split[i].replace(/\*/g, '.*?');
+
+			if (namespaces[0] === '-') {
+				createDebug.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+			} else {
+				createDebug.names.push(new RegExp('^' + namespaces + '$'));
+			}
+		}
+	}
+
+	/**
+	* Disable debug output.
+	*
+	* @return {String} namespaces
+	* @api public
+	*/
+	function disable() {
+		const namespaces = [
+			...createDebug.names.map(toNamespace),
+			...createDebug.skips.map(toNamespace).map(namespace => '-' + namespace)
+		].join(',');
+		createDebug.enable('');
+		return namespaces;
+	}
+
+	/**
+	* Returns true if the given mode name is enabled, false otherwise.
+	*
+	* @param {String} name
+	* @return {Boolean}
+	* @api public
+	*/
+	function enabled(name) {
+		if (name[name.length - 1] === '*') {
+			return true;
+		}
+
+		let i;
+		let len;
+
+		for (i = 0, len = createDebug.skips.length; i < len; i++) {
+			if (createDebug.skips[i].test(name)) {
+				return false;
+			}
+		}
+
+		for (i = 0, len = createDebug.names.length; i < len; i++) {
+			if (createDebug.names[i].test(name)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	* Convert regexp to namespace
+	*
+	* @param {RegExp} regxep
+	* @return {String} namespace
+	* @api private
+	*/
+	function toNamespace(regexp) {
+		return regexp.toString()
+			.substring(2, regexp.toString().length - 2)
+			.replace(/\.\*\?$/, '*');
+	}
+
+	/**
+	* Coerce `val`.
+	*
+	* @param {Mixed} val
+	* @return {Mixed}
+	* @api private
+	*/
+	function coerce(val) {
+		if (val instanceof Error) {
+			return val.stack || val.message;
+		}
+		return val;
+	}
+
+	/**
+	* XXX DO NOT USE. This is a temporary stub function.
+	* XXX It WILL be removed in the next major release.
+	*/
+	function destroy() {
+		console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+	}
+
+	createDebug.enable(createDebug.load());
+
+	return createDebug;
+}
+
+module.exports = setup;
+
+
+/***/ }),
+
+/***/ 8237:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+/**
+ * Detect Electron renderer / nwjs process, which is node, but we should
+ * treat as a browser.
+ */
+
+if (typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs) {
+	module.exports = __nccwpck_require__(8222);
+} else {
+	module.exports = __nccwpck_require__(5332);
+}
+
+
+/***/ }),
+
+/***/ 5332:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+/**
+ * Module dependencies.
+ */
+
+const tty = __nccwpck_require__(3867);
+const util = __nccwpck_require__(1669);
+
+/**
+ * This is the Node.js implementation of `debug()`.
+ */
+
+exports.init = init;
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.destroy = util.deprecate(
+	() => {},
+	'Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.'
+);
+
+/**
+ * Colors.
+ */
+
+exports.colors = [6, 2, 3, 4, 5, 1];
+
+try {
+	// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
+	// eslint-disable-next-line import/no-extraneous-dependencies
+	const supportsColor = __nccwpck_require__(9318);
+
+	if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
+		exports.colors = [
+			20,
+			21,
+			26,
+			27,
+			32,
+			33,
+			38,
+			39,
+			40,
+			41,
+			42,
+			43,
+			44,
+			45,
+			56,
+			57,
+			62,
+			63,
+			68,
+			69,
+			74,
+			75,
+			76,
+			77,
+			78,
+			79,
+			80,
+			81,
+			92,
+			93,
+			98,
+			99,
+			112,
+			113,
+			128,
+			129,
+			134,
+			135,
+			148,
+			149,
+			160,
+			161,
+			162,
+			163,
+			164,
+			165,
+			166,
+			167,
+			168,
+			169,
+			170,
+			171,
+			172,
+			173,
+			178,
+			179,
+			184,
+			185,
+			196,
+			197,
+			198,
+			199,
+			200,
+			201,
+			202,
+			203,
+			204,
+			205,
+			206,
+			207,
+			208,
+			209,
+			214,
+			215,
+			220,
+			221
+		];
+	}
+} catch (error) {
+	// Swallow - we only care if `supports-color` is available; it doesn't have to be.
+}
+
+/**
+ * Build up the default `inspectOpts` object from the environment variables.
+ *
+ *   $ DEBUG_COLORS=no DEBUG_DEPTH=10 DEBUG_SHOW_HIDDEN=enabled node script.js
+ */
+
+exports.inspectOpts = Object.keys(process.env).filter(key => {
+	return /^debug_/i.test(key);
+}).reduce((obj, key) => {
+	// Camel-case
+	const prop = key
+		.substring(6)
+		.toLowerCase()
+		.replace(/_([a-z])/g, (_, k) => {
+			return k.toUpperCase();
+		});
+
+	// Coerce string value into JS value
+	let val = process.env[key];
+	if (/^(yes|on|true|enabled)$/i.test(val)) {
+		val = true;
+	} else if (/^(no|off|false|disabled)$/i.test(val)) {
+		val = false;
+	} else if (val === 'null') {
+		val = null;
+	} else {
+		val = Number(val);
+	}
+
+	obj[prop] = val;
+	return obj;
+}, {});
+
+/**
+ * Is stdout a TTY? Colored output is enabled when `true`.
+ */
+
+function useColors() {
+	return 'colors' in exports.inspectOpts ?
+		Boolean(exports.inspectOpts.colors) :
+		tty.isatty(process.stderr.fd);
+}
+
+/**
+ * Adds ANSI color escape codes if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+	const {namespace: name, useColors} = this;
+
+	if (useColors) {
+		const c = this.color;
+		const colorCode = '\u001B[3' + (c < 8 ? c : '8;5;' + c);
+		const prefix = `  ${colorCode};1m${name} \u001B[0m`;
+
+		args[0] = prefix + args[0].split('\n').join('\n' + prefix);
+		args.push(colorCode + 'm+' + module.exports.humanize(this.diff) + '\u001B[0m');
+	} else {
+		args[0] = getDate() + name + ' ' + args[0];
+	}
+}
+
+function getDate() {
+	if (exports.inspectOpts.hideDate) {
+		return '';
+	}
+	return new Date().toISOString() + ' ';
+}
+
+/**
+ * Invokes `util.format()` with the specified arguments and writes to stderr.
+ */
+
+function log(...args) {
+	return process.stderr.write(util.format(...args) + '\n');
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+function save(namespaces) {
+	if (namespaces) {
+		process.env.DEBUG = namespaces;
+	} else {
+		// If you set a process.env field to null or undefined, it gets cast to the
+		// string 'null' or 'undefined'. Just delete instead.
+		delete process.env.DEBUG;
+	}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+	return process.env.DEBUG;
+}
+
+/**
+ * Init logic for `debug` instances.
+ *
+ * Create a new `inspectOpts` object in case `useColors` is set
+ * differently for a particular `debug` instance.
+ */
+
+function init(debug) {
+	debug.inspectOpts = {};
+
+	const keys = Object.keys(exports.inspectOpts);
+	for (let i = 0; i < keys.length; i++) {
+		debug.inspectOpts[keys[i]] = exports.inspectOpts[keys[i]];
+	}
+}
+
+module.exports = __nccwpck_require__(6243)(exports);
+
+const {formatters} = module.exports;
+
+/**
+ * Map %o to `util.inspect()`, all on a single line.
+ */
+
+formatters.o = function (v) {
+	this.inspectOpts.colors = this.useColors;
+	return util.inspect(v, this.inspectOpts)
+		.split('\n')
+		.map(str => str.trim())
+		.join(' ');
+};
+
+/**
+ * Map %O to `util.inspect()`, allowing multiple lines if needed.
+ */
+
+formatters.O = function (v) {
+	this.inspectOpts.colors = this.useColors;
+	return util.inspect(v, this.inspectOpts);
+};
+
+
+/***/ }),
+
 /***/ 2437:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -2882,6 +3840,7 @@ type DotenvConfigOutput = {
 
 const fs = __nccwpck_require__(5747)
 const path = __nccwpck_require__(5622)
+const os = __nccwpck_require__(2087)
 
 function log (message /*: string */) {
   console.log(`[dotenv][DEBUG] ${message}`)
@@ -2890,7 +3849,7 @@ function log (message /*: string */) {
 const NEWLINE = '\n'
 const RE_INI_KEY_VAL = /^\s*([\w.-]+)\s*=\s*(.*)?\s*$/
 const RE_NEWLINES = /\\n/g
-const NEWLINES_MATCH = /\n|\r|\r\n/
+const NEWLINES_MATCH = /\r\n|\n|\r/
 
 // Parses src into an Object
 function parse (src /*: string | Buffer */, options /*: ?DotenvParseOptions */) /*: DotenvParseOutput */ {
@@ -2932,6 +3891,10 @@ function parse (src /*: string | Buffer */, options /*: ?DotenvParseOptions */) 
   return obj
 }
 
+function resolveHome (envPath) {
+  return envPath[0] === '~' ? path.join(os.homedir(), envPath.slice(1)) : envPath
+}
+
 // Populates process.env from .env file
 function config (options /*: ?DotenvConfigOptions */) /*: DotenvConfigOutput */ {
   let dotenvPath = path.resolve(process.cwd(), '.env')
@@ -2940,7 +3903,7 @@ function config (options /*: ?DotenvConfigOptions */) /*: DotenvConfigOutput */ 
 
   if (options) {
     if (options.path != null) {
-      dotenvPath = options.path
+      dotenvPath = resolveHome(options.path)
     }
     if (options.encoding != null) {
       encoding = options.encoding
@@ -3672,1355 +4635,2502 @@ module.exports = Class;
 
 /***/ }),
 
-/***/ 8878:
-/***/ (function(module) {
+/***/ 205:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-/*!
- * @overview es6-promise - a tiny implementation of Promises/A+.
- * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
- * @license   Licensed under MIT license
- *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
- * @version   v4.2.8+1e68dce6
- */
+"use strict";
 
-(function (global, factory) {
-	 true ? module.exports = factory() :
-	0;
-}(this, (function () { 'use strict';
-
-function objectOrFunction(x) {
-  var type = typeof x;
-  return x !== null && (type === 'object' || type === 'function');
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sequenceS = exports.sequenceT = exports.getApplySemigroup = exports.apS = exports.apSecond = exports.apFirst = exports.ap = void 0;
+var function_1 = __nccwpck_require__(6985);
+function ap(F, G) {
+    return function (fa) { return function (fab) {
+        return F.ap(F.map(fab, function (gab) { return function (ga) { return G.ap(gab, ga); }; }), fa);
+    }; };
 }
-
-function isFunction(x) {
-  return typeof x === 'function';
+exports.ap = ap;
+function apFirst(A) {
+    return function (second) { return function (first) {
+        return A.ap(A.map(first, function (a) { return function () { return a; }; }), second);
+    }; };
 }
-
-
-
-var _isArray = void 0;
-if (Array.isArray) {
-  _isArray = Array.isArray;
-} else {
-  _isArray = function (x) {
-    return Object.prototype.toString.call(x) === '[object Array]';
-  };
+exports.apFirst = apFirst;
+function apSecond(A) {
+    return function (second) { return function (first) {
+        return A.ap(A.map(first, function () { return function (b) { return b; }; }), second);
+    }; };
 }
-
-var isArray = _isArray;
-
-var len = 0;
-var vertxNext = void 0;
-var customSchedulerFn = void 0;
-
-var asap = function asap(callback, arg) {
-  queue[len] = callback;
-  queue[len + 1] = arg;
-  len += 2;
-  if (len === 2) {
-    // If len is 2, that means that we need to schedule an async flush.
-    // If additional callbacks are queued before the queue is flushed, they
-    // will be processed by this flush that we are scheduling.
-    if (customSchedulerFn) {
-      customSchedulerFn(flush);
-    } else {
-      scheduleFlush();
+exports.apSecond = apSecond;
+function apS(F) {
+    return function (name, fb) { return function (fa) {
+        return F.ap(F.map(fa, function (a) { return function (b) {
+            var _a;
+            return Object.assign({}, a, (_a = {}, _a[name] = b, _a));
+        }; }), fb);
+    }; };
+}
+exports.apS = apS;
+function getApplySemigroup(F) {
+    return function (S) { return ({
+        concat: function (first, second) {
+            return F.ap(F.map(first, function (x) { return function (y) { return S.concat(x, y); }; }), second);
+        }
+    }); };
+}
+exports.getApplySemigroup = getApplySemigroup;
+function curried(f, n, acc) {
+    return function (x) {
+        var combined = Array(acc.length + 1);
+        for (var i = 0; i < acc.length; i++) {
+            combined[i] = acc[i];
+        }
+        combined[acc.length] = x;
+        return n === 0 ? f.apply(null, combined) : curried(f, n - 1, combined);
+    };
+}
+var tupleConstructors = {
+    1: function (a) { return [a]; },
+    2: function (a) { return function (b) { return [a, b]; }; },
+    3: function (a) { return function (b) { return function (c) { return [a, b, c]; }; }; },
+    4: function (a) { return function (b) { return function (c) { return function (d) { return [a, b, c, d]; }; }; }; },
+    5: function (a) { return function (b) { return function (c) { return function (d) { return function (e) { return [a, b, c, d, e]; }; }; }; }; }
+};
+function getTupleConstructor(len) {
+    if (!tupleConstructors.hasOwnProperty(len)) {
+        tupleConstructors[len] = curried(function_1.tuple, len - 1, []);
     }
-  }
+    return tupleConstructors[len];
+}
+function sequenceT(F) {
+    return function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        var len = args.length;
+        var f = getTupleConstructor(len);
+        var fas = F.map(args[0], f);
+        for (var i = 1; i < len; i++) {
+            fas = F.ap(fas, args[i]);
+        }
+        return fas;
+    };
+}
+exports.sequenceT = sequenceT;
+function getRecordConstructor(keys) {
+    var len = keys.length;
+    switch (len) {
+        case 1:
+            return function (a) {
+                var _a;
+                return (_a = {}, _a[keys[0]] = a, _a);
+            };
+        case 2:
+            return function (a) { return function (b) {
+                var _a;
+                return (_a = {}, _a[keys[0]] = a, _a[keys[1]] = b, _a);
+            }; };
+        case 3:
+            return function (a) { return function (b) { return function (c) {
+                var _a;
+                return (_a = {}, _a[keys[0]] = a, _a[keys[1]] = b, _a[keys[2]] = c, _a);
+            }; }; };
+        case 4:
+            return function (a) { return function (b) { return function (c) { return function (d) {
+                var _a;
+                return (_a = {},
+                    _a[keys[0]] = a,
+                    _a[keys[1]] = b,
+                    _a[keys[2]] = c,
+                    _a[keys[3]] = d,
+                    _a);
+            }; }; }; };
+        case 5:
+            return function (a) { return function (b) { return function (c) { return function (d) { return function (e) {
+                var _a;
+                return (_a = {},
+                    _a[keys[0]] = a,
+                    _a[keys[1]] = b,
+                    _a[keys[2]] = c,
+                    _a[keys[3]] = d,
+                    _a[keys[4]] = e,
+                    _a);
+            }; }; }; }; };
+        default:
+            return curried(function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i] = arguments[_i];
+                }
+                var r = {};
+                for (var i = 0; i < len; i++) {
+                    r[keys[i]] = args[i];
+                }
+                return r;
+            }, len - 1, []);
+    }
+}
+function sequenceS(F) {
+    return function (r) {
+        var keys = Object.keys(r);
+        var len = keys.length;
+        var f = getRecordConstructor(keys);
+        var fr = F.map(r[keys[0]], f);
+        for (var i = 1; i < len; i++) {
+            fr = F.ap(fr, r[keys[i]]);
+        }
+        return fr;
+    };
+}
+exports.sequenceS = sequenceS;
+
+
+/***/ }),
+
+/***/ 2372:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.bind = exports.chainFirst = void 0;
+function chainFirst(M) {
+    return function (f) { return function (first) { return M.chain(first, function (a) { return M.map(f(a), function () { return a; }); }); }; };
+}
+exports.chainFirst = chainFirst;
+function bind(M) {
+    return function (name, f) { return function (ma) { return M.chain(ma, function (a) { return M.map(f(a), function (b) {
+        var _a;
+        return Object.assign({}, a, (_a = {}, _a[name] = b, _a));
+    }); }); }; };
+}
+exports.bind = bind;
+
+
+/***/ }),
+
+/***/ 6964:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.eqDate = exports.eqNumber = exports.eqString = exports.eqBoolean = exports.eq = exports.strictEqual = exports.getStructEq = exports.getTupleEq = exports.Contravariant = exports.getMonoid = exports.getSemigroup = exports.eqStrict = exports.URI = exports.contramap = exports.tuple = exports.struct = exports.fromEquals = void 0;
+var function_1 = __nccwpck_require__(6985);
+// -------------------------------------------------------------------------------------
+// constructors
+// -------------------------------------------------------------------------------------
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+var fromEquals = function (equals) { return ({
+    equals: function (x, y) { return x === y || equals(x, y); }
+}); };
+exports.fromEquals = fromEquals;
+// -------------------------------------------------------------------------------------
+// combinators
+// -------------------------------------------------------------------------------------
+/**
+ * @category combinators
+ * @since 2.10.0
+ */
+var struct = function (eqs) {
+    return exports.fromEquals(function (first, second) {
+        for (var key in eqs) {
+            if (!eqs[key].equals(first[key], second[key])) {
+                return false;
+            }
+        }
+        return true;
+    });
+};
+exports.struct = struct;
+/**
+ * Given a tuple of `Eq`s returns a `Eq` for the tuple
+ *
+ * @example
+ * import { tuple } from 'fp-ts/Eq'
+ * import * as S from 'fp-ts/string'
+ * import * as N from 'fp-ts/number'
+ * import * as B from 'fp-ts/boolean'
+ *
+ * const E = tuple(S.Eq, N.Eq, B.Eq)
+ * assert.strictEqual(E.equals(['a', 1, true], ['a', 1, true]), true)
+ * assert.strictEqual(E.equals(['a', 1, true], ['b', 1, true]), false)
+ * assert.strictEqual(E.equals(['a', 1, true], ['a', 2, true]), false)
+ * assert.strictEqual(E.equals(['a', 1, true], ['a', 1, false]), false)
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var tuple = function () {
+    var eqs = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        eqs[_i] = arguments[_i];
+    }
+    return exports.fromEquals(function (first, second) { return eqs.every(function (E, i) { return E.equals(first[i], second[i]); }); });
+};
+exports.tuple = tuple;
+// -------------------------------------------------------------------------------------
+// non-pipeables
+// -------------------------------------------------------------------------------------
+/* istanbul ignore next */
+var contramap_ = function (fa, f) { return function_1.pipe(fa, exports.contramap(f)); };
+// -------------------------------------------------------------------------------------
+// type class members
+// -------------------------------------------------------------------------------------
+/**
+ * @category Contravariant
+ * @since 2.0.0
+ */
+var contramap = function (f) { return function (fa) {
+    return exports.fromEquals(function (x, y) { return fa.equals(f(x), f(y)); });
+}; };
+exports.contramap = contramap;
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+/**
+ * @category instances
+ * @since 2.0.0
+ */
+exports.URI = 'Eq';
+/**
+ * @category instances
+ * @since 2.5.0
+ */
+exports.eqStrict = {
+    equals: function (a, b) { return a === b; }
+};
+var empty = {
+    equals: function () { return true; }
+};
+/**
+ * @category instances
+ * @since 2.10.0
+ */
+var getSemigroup = function () { return ({
+    concat: function (x, y) { return exports.fromEquals(function (a, b) { return x.equals(a, b) && y.equals(a, b); }); }
+}); };
+exports.getSemigroup = getSemigroup;
+/**
+ * @category instances
+ * @since 2.6.0
+ */
+var getMonoid = function () { return ({
+    concat: exports.getSemigroup().concat,
+    empty: empty
+}); };
+exports.getMonoid = getMonoid;
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Contravariant = {
+    URI: exports.URI,
+    contramap: contramap_
+};
+// -------------------------------------------------------------------------------------
+// deprecated
+// -------------------------------------------------------------------------------------
+/**
+ * Use [`tuple`](#tuple) instead.
+ *
+ * @category combinators
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getTupleEq = exports.tuple;
+/**
+ * Use [`struct`](#struct) instead.
+ *
+ * @category combinators
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getStructEq = exports.struct;
+/**
+ * Use [`eqStrict`](#eqstrict) instead
+ *
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.strictEqual = exports.eqStrict.equals;
+/**
+ * Use small, specific instances instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.eq = exports.Contravariant;
+/**
+ * Use [`Eq`](./boolean.ts.html#eq) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.eqBoolean = exports.eqStrict;
+/**
+ * Use [`Eq`](./string.ts.html#eq) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.eqString = exports.eqStrict;
+/**
+ * Use [`Eq`](./number.ts.html#eq) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.eqNumber = exports.eqStrict;
+/**
+ * Use [`Eq`](./Date.ts.html#eq) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.eqDate = {
+    equals: function (first, second) { return first.valueOf() === second.valueOf(); }
 };
 
-function setScheduler(scheduleFn) {
-  customSchedulerFn = scheduleFn;
+
+/***/ }),
+
+/***/ 5533:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getFunctorComposition = exports.bindTo = exports.flap = exports.map = void 0;
+/**
+ * A `Functor` is a type constructor which supports a mapping operation `map`.
+ *
+ * `map` can be used to turn functions `a -> b` into functions `f a -> f b` whose argument and return types use the type
+ * constructor `f` to represent some computational context.
+ *
+ * Instances must satisfy the following laws:
+ *
+ * 1. Identity: `F.map(fa, a => a) <-> fa`
+ * 2. Composition: `F.map(fa, a => bc(ab(a))) <-> F.map(F.map(fa, ab), bc)`
+ *
+ * @since 2.0.0
+ */
+var function_1 = __nccwpck_require__(6985);
+function map(F, G) {
+    return function (f) { return function (fa) { return F.map(fa, function (ga) { return G.map(ga, f); }); }; };
 }
-
-function setAsap(asapFn) {
-  asap = asapFn;
+exports.map = map;
+function flap(F) {
+    return function (a) { return function (fab) { return F.map(fab, function (f) { return f(a); }); }; };
 }
-
-var browserWindow = typeof window !== 'undefined' ? window : undefined;
-var browserGlobal = browserWindow || {};
-var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
-
-// test for web worker but not in IE10
-var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
-
-// node
-function useNextTick() {
-  // node version 0.10.x displays a deprecation warning when nextTick is used recursively
-  // see https://github.com/cujojs/when/issues/410 for details
-  return function () {
-    return process.nextTick(flush);
-  };
+exports.flap = flap;
+function bindTo(F) {
+    return function (name) { return function (fa) { return F.map(fa, function (a) {
+        var _a;
+        return (_a = {}, _a[name] = a, _a);
+    }); }; };
 }
-
-// vertx
-function useVertxTimer() {
-  if (typeof vertxNext !== 'undefined') {
-    return function () {
-      vertxNext(flush);
+exports.bindTo = bindTo;
+/** @deprecated */
+function getFunctorComposition(F, G) {
+    var _map = map(F, G);
+    return {
+        map: function (fga, f) { return function_1.pipe(fga, _map(f)); }
     };
-  }
-
-  return useSetTimeout();
 }
-
-function useMutationObserver() {
-  var iterations = 0;
-  var observer = new BrowserMutationObserver(flush);
-  var node = document.createTextNode('');
-  observer.observe(node, { characterData: true });
-
-  return function () {
-    node.data = iterations = ++iterations % 2;
-  };
-}
-
-// web worker
-function useMessageChannel() {
-  var channel = new MessageChannel();
-  channel.port1.onmessage = flush;
-  return function () {
-    return channel.port2.postMessage(0);
-  };
-}
-
-function useSetTimeout() {
-  // Store setTimeout reference so es6-promise will be unaffected by
-  // other code modifying setTimeout (like sinon.useFakeTimers())
-  var globalSetTimeout = setTimeout;
-  return function () {
-    return globalSetTimeout(flush, 1);
-  };
-}
-
-var queue = new Array(1000);
-function flush() {
-  for (var i = 0; i < len; i += 2) {
-    var callback = queue[i];
-    var arg = queue[i + 1];
-
-    callback(arg);
-
-    queue[i] = undefined;
-    queue[i + 1] = undefined;
-  }
-
-  len = 0;
-}
-
-function attemptVertx() {
-  try {
-    var vertx = Function('return this')().require('vertx');
-    vertxNext = vertx.runOnLoop || vertx.runOnContext;
-    return useVertxTimer();
-  } catch (e) {
-    return useSetTimeout();
-  }
-}
-
-var scheduleFlush = void 0;
-// Decide what async method to use to triggering processing of queued callbacks:
-if (isNode) {
-  scheduleFlush = useNextTick();
-} else if (BrowserMutationObserver) {
-  scheduleFlush = useMutationObserver();
-} else if (isWorker) {
-  scheduleFlush = useMessageChannel();
-} else if (browserWindow === undefined && "function" === 'function') {
-  scheduleFlush = attemptVertx();
-} else {
-  scheduleFlush = useSetTimeout();
-}
-
-function then(onFulfillment, onRejection) {
-  var parent = this;
-
-  var child = new this.constructor(noop);
-
-  if (child[PROMISE_ID] === undefined) {
-    makePromise(child);
-  }
-
-  var _state = parent._state;
-
-
-  if (_state) {
-    var callback = arguments[_state - 1];
-    asap(function () {
-      return invokeCallback(_state, child, callback, parent._result);
-    });
-  } else {
-    subscribe(parent, child, onFulfillment, onRejection);
-  }
-
-  return child;
-}
-
-/**
-  `Promise.resolve` returns a promise that will become resolved with the
-  passed `value`. It is shorthand for the following:
-
-  ```javascript
-  let promise = new Promise(function(resolve, reject){
-    resolve(1);
-  });
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  let promise = Promise.resolve(1);
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  @method resolve
-  @static
-  @param {Any} value value that the returned promise will be resolved with
-  Useful for tooling.
-  @return {Promise} a promise that will become fulfilled with the given
-  `value`
-*/
-function resolve$1(object) {
-  /*jshint validthis:true */
-  var Constructor = this;
-
-  if (object && typeof object === 'object' && object.constructor === Constructor) {
-    return object;
-  }
-
-  var promise = new Constructor(noop);
-  resolve(promise, object);
-  return promise;
-}
-
-var PROMISE_ID = Math.random().toString(36).substring(2);
-
-function noop() {}
-
-var PENDING = void 0;
-var FULFILLED = 1;
-var REJECTED = 2;
-
-function selfFulfillment() {
-  return new TypeError("You cannot resolve a promise with itself");
-}
-
-function cannotReturnOwn() {
-  return new TypeError('A promises callback cannot return that same promise.');
-}
-
-function tryThen(then$$1, value, fulfillmentHandler, rejectionHandler) {
-  try {
-    then$$1.call(value, fulfillmentHandler, rejectionHandler);
-  } catch (e) {
-    return e;
-  }
-}
-
-function handleForeignThenable(promise, thenable, then$$1) {
-  asap(function (promise) {
-    var sealed = false;
-    var error = tryThen(then$$1, thenable, function (value) {
-      if (sealed) {
-        return;
-      }
-      sealed = true;
-      if (thenable !== value) {
-        resolve(promise, value);
-      } else {
-        fulfill(promise, value);
-      }
-    }, function (reason) {
-      if (sealed) {
-        return;
-      }
-      sealed = true;
-
-      reject(promise, reason);
-    }, 'Settle: ' + (promise._label || ' unknown promise'));
-
-    if (!sealed && error) {
-      sealed = true;
-      reject(promise, error);
-    }
-  }, promise);
-}
-
-function handleOwnThenable(promise, thenable) {
-  if (thenable._state === FULFILLED) {
-    fulfill(promise, thenable._result);
-  } else if (thenable._state === REJECTED) {
-    reject(promise, thenable._result);
-  } else {
-    subscribe(thenable, undefined, function (value) {
-      return resolve(promise, value);
-    }, function (reason) {
-      return reject(promise, reason);
-    });
-  }
-}
-
-function handleMaybeThenable(promise, maybeThenable, then$$1) {
-  if (maybeThenable.constructor === promise.constructor && then$$1 === then && maybeThenable.constructor.resolve === resolve$1) {
-    handleOwnThenable(promise, maybeThenable);
-  } else {
-    if (then$$1 === undefined) {
-      fulfill(promise, maybeThenable);
-    } else if (isFunction(then$$1)) {
-      handleForeignThenable(promise, maybeThenable, then$$1);
-    } else {
-      fulfill(promise, maybeThenable);
-    }
-  }
-}
-
-function resolve(promise, value) {
-  if (promise === value) {
-    reject(promise, selfFulfillment());
-  } else if (objectOrFunction(value)) {
-    var then$$1 = void 0;
-    try {
-      then$$1 = value.then;
-    } catch (error) {
-      reject(promise, error);
-      return;
-    }
-    handleMaybeThenable(promise, value, then$$1);
-  } else {
-    fulfill(promise, value);
-  }
-}
-
-function publishRejection(promise) {
-  if (promise._onerror) {
-    promise._onerror(promise._result);
-  }
-
-  publish(promise);
-}
-
-function fulfill(promise, value) {
-  if (promise._state !== PENDING) {
-    return;
-  }
-
-  promise._result = value;
-  promise._state = FULFILLED;
-
-  if (promise._subscribers.length !== 0) {
-    asap(publish, promise);
-  }
-}
-
-function reject(promise, reason) {
-  if (promise._state !== PENDING) {
-    return;
-  }
-  promise._state = REJECTED;
-  promise._result = reason;
-
-  asap(publishRejection, promise);
-}
-
-function subscribe(parent, child, onFulfillment, onRejection) {
-  var _subscribers = parent._subscribers;
-  var length = _subscribers.length;
-
-
-  parent._onerror = null;
-
-  _subscribers[length] = child;
-  _subscribers[length + FULFILLED] = onFulfillment;
-  _subscribers[length + REJECTED] = onRejection;
-
-  if (length === 0 && parent._state) {
-    asap(publish, parent);
-  }
-}
-
-function publish(promise) {
-  var subscribers = promise._subscribers;
-  var settled = promise._state;
-
-  if (subscribers.length === 0) {
-    return;
-  }
-
-  var child = void 0,
-      callback = void 0,
-      detail = promise._result;
-
-  for (var i = 0; i < subscribers.length; i += 3) {
-    child = subscribers[i];
-    callback = subscribers[i + settled];
-
-    if (child) {
-      invokeCallback(settled, child, callback, detail);
-    } else {
-      callback(detail);
-    }
-  }
-
-  promise._subscribers.length = 0;
-}
-
-function invokeCallback(settled, promise, callback, detail) {
-  var hasCallback = isFunction(callback),
-      value = void 0,
-      error = void 0,
-      succeeded = true;
-
-  if (hasCallback) {
-    try {
-      value = callback(detail);
-    } catch (e) {
-      succeeded = false;
-      error = e;
-    }
-
-    if (promise === value) {
-      reject(promise, cannotReturnOwn());
-      return;
-    }
-  } else {
-    value = detail;
-  }
-
-  if (promise._state !== PENDING) {
-    // noop
-  } else if (hasCallback && succeeded) {
-    resolve(promise, value);
-  } else if (succeeded === false) {
-    reject(promise, error);
-  } else if (settled === FULFILLED) {
-    fulfill(promise, value);
-  } else if (settled === REJECTED) {
-    reject(promise, value);
-  }
-}
-
-function initializePromise(promise, resolver) {
-  try {
-    resolver(function resolvePromise(value) {
-      resolve(promise, value);
-    }, function rejectPromise(reason) {
-      reject(promise, reason);
-    });
-  } catch (e) {
-    reject(promise, e);
-  }
-}
-
-var id = 0;
-function nextId() {
-  return id++;
-}
-
-function makePromise(promise) {
-  promise[PROMISE_ID] = id++;
-  promise._state = undefined;
-  promise._result = undefined;
-  promise._subscribers = [];
-}
-
-function validationError() {
-  return new Error('Array Methods must be provided an Array');
-}
-
-var Enumerator = function () {
-  function Enumerator(Constructor, input) {
-    this._instanceConstructor = Constructor;
-    this.promise = new Constructor(noop);
-
-    if (!this.promise[PROMISE_ID]) {
-      makePromise(this.promise);
-    }
-
-    if (isArray(input)) {
-      this.length = input.length;
-      this._remaining = input.length;
-
-      this._result = new Array(this.length);
-
-      if (this.length === 0) {
-        fulfill(this.promise, this._result);
-      } else {
-        this.length = this.length || 0;
-        this._enumerate(input);
-        if (this._remaining === 0) {
-          fulfill(this.promise, this._result);
-        }
-      }
-    } else {
-      reject(this.promise, validationError());
-    }
-  }
-
-  Enumerator.prototype._enumerate = function _enumerate(input) {
-    for (var i = 0; this._state === PENDING && i < input.length; i++) {
-      this._eachEntry(input[i], i);
-    }
-  };
-
-  Enumerator.prototype._eachEntry = function _eachEntry(entry, i) {
-    var c = this._instanceConstructor;
-    var resolve$$1 = c.resolve;
-
-
-    if (resolve$$1 === resolve$1) {
-      var _then = void 0;
-      var error = void 0;
-      var didError = false;
-      try {
-        _then = entry.then;
-      } catch (e) {
-        didError = true;
-        error = e;
-      }
-
-      if (_then === then && entry._state !== PENDING) {
-        this._settledAt(entry._state, i, entry._result);
-      } else if (typeof _then !== 'function') {
-        this._remaining--;
-        this._result[i] = entry;
-      } else if (c === Promise$1) {
-        var promise = new c(noop);
-        if (didError) {
-          reject(promise, error);
-        } else {
-          handleMaybeThenable(promise, entry, _then);
-        }
-        this._willSettleAt(promise, i);
-      } else {
-        this._willSettleAt(new c(function (resolve$$1) {
-          return resolve$$1(entry);
-        }), i);
-      }
-    } else {
-      this._willSettleAt(resolve$$1(entry), i);
-    }
-  };
-
-  Enumerator.prototype._settledAt = function _settledAt(state, i, value) {
-    var promise = this.promise;
-
-
-    if (promise._state === PENDING) {
-      this._remaining--;
-
-      if (state === REJECTED) {
-        reject(promise, value);
-      } else {
-        this._result[i] = value;
-      }
-    }
-
-    if (this._remaining === 0) {
-      fulfill(promise, this._result);
-    }
-  };
-
-  Enumerator.prototype._willSettleAt = function _willSettleAt(promise, i) {
-    var enumerator = this;
-
-    subscribe(promise, undefined, function (value) {
-      return enumerator._settledAt(FULFILLED, i, value);
-    }, function (reason) {
-      return enumerator._settledAt(REJECTED, i, reason);
-    });
-  };
-
-  return Enumerator;
-}();
-
-/**
-  `Promise.all` accepts an array of promises, and returns a new promise which
-  is fulfilled with an array of fulfillment values for the passed promises, or
-  rejected with the reason of the first passed promise to be rejected. It casts all
-  elements of the passed iterable to promises as it runs this algorithm.
-
-  Example:
-
-  ```javascript
-  let promise1 = resolve(1);
-  let promise2 = resolve(2);
-  let promise3 = resolve(3);
-  let promises = [ promise1, promise2, promise3 ];
-
-  Promise.all(promises).then(function(array){
-    // The array here would be [ 1, 2, 3 ];
-  });
-  ```
-
-  If any of the `promises` given to `all` are rejected, the first promise
-  that is rejected will be given as an argument to the returned promises's
-  rejection handler. For example:
-
-  Example:
-
-  ```javascript
-  let promise1 = resolve(1);
-  let promise2 = reject(new Error("2"));
-  let promise3 = reject(new Error("3"));
-  let promises = [ promise1, promise2, promise3 ];
-
-  Promise.all(promises).then(function(array){
-    // Code here never runs because there are rejected promises!
-  }, function(error) {
-    // error.message === "2"
-  });
-  ```
-
-  @method all
-  @static
-  @param {Array} entries array of promises
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled when all `promises` have been
-  fulfilled, or rejected if any of them become rejected.
-  @static
-*/
-function all(entries) {
-  return new Enumerator(this, entries).promise;
-}
-
-/**
-  `Promise.race` returns a new promise which is settled in the same way as the
-  first passed promise to settle.
-
-  Example:
-
-  ```javascript
-  let promise1 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 1');
-    }, 200);
-  });
-
-  let promise2 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 2');
-    }, 100);
-  });
-
-  Promise.race([promise1, promise2]).then(function(result){
-    // result === 'promise 2' because it was resolved before promise1
-    // was resolved.
-  });
-  ```
-
-  `Promise.race` is deterministic in that only the state of the first
-  settled promise matters. For example, even if other promises given to the
-  `promises` array argument are resolved, but the first settled promise has
-  become rejected before the other promises became fulfilled, the returned
-  promise will become rejected:
-
-  ```javascript
-  let promise1 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 1');
-    }, 200);
-  });
-
-  let promise2 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      reject(new Error('promise 2'));
-    }, 100);
-  });
-
-  Promise.race([promise1, promise2]).then(function(result){
-    // Code here never runs
-  }, function(reason){
-    // reason.message === 'promise 2' because promise 2 became rejected before
-    // promise 1 became fulfilled
-  });
-  ```
-
-  An example real-world use case is implementing timeouts:
-
-  ```javascript
-  Promise.race([ajax('foo.json'), timeout(5000)])
-  ```
-
-  @method race
-  @static
-  @param {Array} promises array of promises to observe
-  Useful for tooling.
-  @return {Promise} a promise which settles in the same way as the first passed
-  promise to settle.
-*/
-function race(entries) {
-  /*jshint validthis:true */
-  var Constructor = this;
-
-  if (!isArray(entries)) {
-    return new Constructor(function (_, reject) {
-      return reject(new TypeError('You must pass an array to race.'));
-    });
-  } else {
-    return new Constructor(function (resolve, reject) {
-      var length = entries.length;
-      for (var i = 0; i < length; i++) {
-        Constructor.resolve(entries[i]).then(resolve, reject);
-      }
-    });
-  }
-}
-
-/**
-  `Promise.reject` returns a promise rejected with the passed `reason`.
-  It is shorthand for the following:
-
-  ```javascript
-  let promise = new Promise(function(resolve, reject){
-    reject(new Error('WHOOPS'));
-  });
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  let promise = Promise.reject(new Error('WHOOPS'));
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  @method reject
-  @static
-  @param {Any} reason value that the returned promise will be rejected with.
-  Useful for tooling.
-  @return {Promise} a promise rejected with the given `reason`.
-*/
-function reject$1(reason) {
-  /*jshint validthis:true */
-  var Constructor = this;
-  var promise = new Constructor(noop);
-  reject(promise, reason);
-  return promise;
-}
-
-function needsResolver() {
-  throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-}
-
-function needsNew() {
-  throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
-}
-
-/**
-  Promise objects represent the eventual result of an asynchronous operation. The
-  primary way of interacting with a promise is through its `then` method, which
-  registers callbacks to receive either a promise's eventual value or the reason
-  why the promise cannot be fulfilled.
-
-  Terminology
-  -----------
-
-  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
-  - `thenable` is an object or function that defines a `then` method.
-  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
-  - `exception` is a value that is thrown using the throw statement.
-  - `reason` is a value that indicates why a promise was rejected.
-  - `settled` the final resting state of a promise, fulfilled or rejected.
-
-  A promise can be in one of three states: pending, fulfilled, or rejected.
-
-  Promises that are fulfilled have a fulfillment value and are in the fulfilled
-  state.  Promises that are rejected have a rejection reason and are in the
-  rejected state.  A fulfillment value is never a thenable.
-
-  Promises can also be said to *resolve* a value.  If this value is also a
-  promise, then the original promise's settled state will match the value's
-  settled state.  So a promise that *resolves* a promise that rejects will
-  itself reject, and a promise that *resolves* a promise that fulfills will
-  itself fulfill.
-
-
-  Basic Usage:
-  ------------
-
-  ```js
-  let promise = new Promise(function(resolve, reject) {
-    // on success
-    resolve(value);
-
-    // on failure
-    reject(reason);
-  });
-
-  promise.then(function(value) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Advanced Usage:
-  ---------------
-
-  Promises shine when abstracting away asynchronous interactions such as
-  `XMLHttpRequest`s.
-
-  ```js
-  function getJSON(url) {
-    return new Promise(function(resolve, reject){
-      let xhr = new XMLHttpRequest();
-
-      xhr.open('GET', url);
-      xhr.onreadystatechange = handler;
-      xhr.responseType = 'json';
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.send();
-
-      function handler() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) {
-            resolve(this.response);
-          } else {
-            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
-          }
-        }
-      };
-    });
-  }
-
-  getJSON('/posts.json').then(function(json) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Unlike callbacks, promises are great composable primitives.
-
-  ```js
-  Promise.all([
-    getJSON('/posts'),
-    getJSON('/comments')
-  ]).then(function(values){
-    values[0] // => postsJSON
-    values[1] // => commentsJSON
-
-    return values;
-  });
-  ```
-
-  @class Promise
-  @param {Function} resolver
-  Useful for tooling.
-  @constructor
-*/
-
-var Promise$1 = function () {
-  function Promise(resolver) {
-    this[PROMISE_ID] = nextId();
-    this._result = this._state = undefined;
-    this._subscribers = [];
-
-    if (noop !== resolver) {
-      typeof resolver !== 'function' && needsResolver();
-      this instanceof Promise ? initializePromise(this, resolver) : needsNew();
-    }
-  }
-
-  /**
-  The primary way of interacting with a promise is through its `then` method,
-  which registers callbacks to receive either a promise's eventual value or the
-  reason why the promise cannot be fulfilled.
-   ```js
-  findUser().then(function(user){
-    // user is available
-  }, function(reason){
-    // user is unavailable, and you are given the reason why
-  });
-  ```
-   Chaining
-  --------
-   The return value of `then` is itself a promise.  This second, 'downstream'
-  promise is resolved with the return value of the first promise's fulfillment
-  or rejection handler, or rejected if the handler throws an exception.
-   ```js
-  findUser().then(function (user) {
-    return user.name;
-  }, function (reason) {
-    return 'default name';
-  }).then(function (userName) {
-    // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
-    // will be `'default name'`
-  });
-   findUser().then(function (user) {
-    throw new Error('Found user, but still unhappy');
-  }, function (reason) {
-    throw new Error('`findUser` rejected and we're unhappy');
-  }).then(function (value) {
-    // never reached
-  }, function (reason) {
-    // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
-    // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
-  });
-  ```
-  If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
-   ```js
-  findUser().then(function (user) {
-    throw new PedagogicalException('Upstream error');
-  }).then(function (value) {
-    // never reached
-  }).then(function (value) {
-    // never reached
-  }, function (reason) {
-    // The `PedgagocialException` is propagated all the way down to here
-  });
-  ```
-   Assimilation
-  ------------
-   Sometimes the value you want to propagate to a downstream promise can only be
-  retrieved asynchronously. This can be achieved by returning a promise in the
-  fulfillment or rejection handler. The downstream promise will then be pending
-  until the returned promise is settled. This is called *assimilation*.
-   ```js
-  findUser().then(function (user) {
-    return findCommentsByAuthor(user);
-  }).then(function (comments) {
-    // The user's comments are now available
-  });
-  ```
-   If the assimliated promise rejects, then the downstream promise will also reject.
-   ```js
-  findUser().then(function (user) {
-    return findCommentsByAuthor(user);
-  }).then(function (comments) {
-    // If `findCommentsByAuthor` fulfills, we'll have the value here
-  }, function (reason) {
-    // If `findCommentsByAuthor` rejects, we'll have the reason here
-  });
-  ```
-   Simple Example
-  --------------
-   Synchronous Example
-   ```javascript
-  let result;
-   try {
-    result = findResult();
-    // success
-  } catch(reason) {
-    // failure
-  }
-  ```
-   Errback Example
-   ```js
-  findResult(function(result, err){
-    if (err) {
-      // failure
-    } else {
-      // success
-    }
-  });
-  ```
-   Promise Example;
-   ```javascript
-  findResult().then(function(result){
-    // success
-  }, function(reason){
-    // failure
-  });
-  ```
-   Advanced Example
-  --------------
-   Synchronous Example
-   ```javascript
-  let author, books;
-   try {
-    author = findAuthor();
-    books  = findBooksByAuthor(author);
-    // success
-  } catch(reason) {
-    // failure
-  }
-  ```
-   Errback Example
-   ```js
-   function foundBooks(books) {
-   }
-   function failure(reason) {
-   }
-   findAuthor(function(author, err){
-    if (err) {
-      failure(err);
-      // failure
-    } else {
-      try {
-        findBoooksByAuthor(author, function(books, err) {
-          if (err) {
-            failure(err);
-          } else {
-            try {
-              foundBooks(books);
-            } catch(reason) {
-              failure(reason);
-            }
-          }
-        });
-      } catch(error) {
-        failure(err);
-      }
-      // success
-    }
-  });
-  ```
-   Promise Example;
-   ```javascript
-  findAuthor().
-    then(findBooksByAuthor).
-    then(function(books){
-      // found books
-  }).catch(function(reason){
-    // something went wrong
-  });
-  ```
-   @method then
-  @param {Function} onFulfilled
-  @param {Function} onRejected
-  Useful for tooling.
-  @return {Promise}
-  */
-
-  /**
-  `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
-  as the catch block of a try/catch statement.
-  ```js
-  function findAuthor(){
-  throw new Error('couldn't find that author');
-  }
-  // synchronous
-  try {
-  findAuthor();
-  } catch(reason) {
-  // something went wrong
-  }
-  // async with promises
-  findAuthor().catch(function(reason){
-  // something went wrong
-  });
-  ```
-  @method catch
-  @param {Function} onRejection
-  Useful for tooling.
-  @return {Promise}
-  */
-
-
-  Promise.prototype.catch = function _catch(onRejection) {
-    return this.then(null, onRejection);
-  };
-
-  /**
-    `finally` will be invoked regardless of the promise's fate just as native
-    try/catch/finally behaves
-  
-    Synchronous example:
-  
-    ```js
-    findAuthor() {
-      if (Math.random() > 0.5) {
-        throw new Error();
-      }
-      return new Author();
-    }
-  
-    try {
-      return findAuthor(); // succeed or fail
-    } catch(error) {
-      return findOtherAuther();
-    } finally {
-      // always runs
-      // doesn't affect the return value
-    }
-    ```
-  
-    Asynchronous example:
-  
-    ```js
-    findAuthor().catch(function(reason){
-      return findOtherAuther();
-    }).finally(function(){
-      // author was either found, or not
-    });
-    ```
-  
-    @method finally
-    @param {Function} callback
-    @return {Promise}
-  */
-
-
-  Promise.prototype.finally = function _finally(callback) {
-    var promise = this;
-    var constructor = promise.constructor;
-
-    if (isFunction(callback)) {
-      return promise.then(function (value) {
-        return constructor.resolve(callback()).then(function () {
-          return value;
-        });
-      }, function (reason) {
-        return constructor.resolve(callback()).then(function () {
-          throw reason;
-        });
-      });
-    }
-
-    return promise.then(callback, callback);
-  };
-
-  return Promise;
-}();
-
-Promise$1.prototype.then = then;
-Promise$1.all = all;
-Promise$1.race = race;
-Promise$1.resolve = resolve$1;
-Promise$1.reject = reject$1;
-Promise$1._setScheduler = setScheduler;
-Promise$1._setAsap = setAsap;
-Promise$1._asap = asap;
-
-/*global self*/
-function polyfill() {
-  var local = void 0;
-
-  if (typeof global !== 'undefined') {
-    local = global;
-  } else if (typeof self !== 'undefined') {
-    local = self;
-  } else {
-    try {
-      local = Function('return this')();
-    } catch (e) {
-      throw new Error('polyfill failed because global object is unavailable in this environment');
-    }
-  }
-
-  var P = local.Promise;
-
-  if (P) {
-    var promiseToString = null;
-    try {
-      promiseToString = Object.prototype.toString.call(P.resolve());
-    } catch (e) {
-      // silently ignored
-    }
-
-    if (promiseToString === '[object Promise]' && !P.cast) {
-      return;
-    }
-  }
-
-  local.Promise = Promise$1;
-}
-
-// Strange compat..
-Promise$1.polyfill = polyfill;
-Promise$1.Promise = Promise$1;
-
-return Promise$1;
-
-})));
-
-
-
-//# sourceMappingURL=es6-promise.map
+exports.getFunctorComposition = getFunctorComposition;
 
 
 /***/ }),
 
-/***/ 1023:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 179:
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
+/**
+ * A `Magma` is a pair `(A, concat)` in which `A` is a non-empty set and `concat` is a binary operation on `A`
+ *
+ * See [Semigroup](https://gcanti.github.io/fp-ts/modules/Semigroup.ts.html) for some instances.
+ *
+ * @since 2.0.0
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.concatAll = exports.endo = exports.filterSecond = exports.filterFirst = exports.reverse = void 0;
+// -------------------------------------------------------------------------------------
+// combinators
+// -------------------------------------------------------------------------------------
+/**
+ * The dual of a `Magma`, obtained by swapping the arguments of `concat`.
+ *
+ * @example
+ * import { reverse, concatAll } from 'fp-ts/Magma'
+ * import * as N from 'fp-ts/number'
+ *
+ * const subAll = concatAll(reverse(N.MagmaSub))(0)
+ *
+ * assert.deepStrictEqual(subAll([1, 2, 3]), 2)
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var reverse = function (M) { return ({
+    concat: function (first, second) { return M.concat(second, first); }
+}); };
+exports.reverse = reverse;
+/**
+ * @category combinators
+ * @since 2.11.0
+ */
+var filterFirst = function (predicate) { return function (M) { return ({
+    concat: function (first, second) { return (predicate(first) ? M.concat(first, second) : second); }
+}); }; };
+exports.filterFirst = filterFirst;
+/**
+ * @category combinators
+ * @since 2.11.0
+ */
+var filterSecond = function (predicate) { return function (M) { return ({
+    concat: function (first, second) { return (predicate(second) ? M.concat(first, second) : first); }
+}); }; };
+exports.filterSecond = filterSecond;
+/**
+ * @category combinators
+ * @since 2.11.0
+ */
+var endo = function (f) { return function (M) { return ({
+    concat: function (first, second) { return M.concat(f(first), f(second)); }
+}); }; };
+exports.endo = endo;
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+/**
+ * Given a sequence of `as`, concat them and return the total.
+ *
+ * If `as` is empty, return the provided `startWith` value.
+ *
+ * @example
+ * import { concatAll } from 'fp-ts/Magma'
+ * import * as N from 'fp-ts/number'
+ *
+ * const subAll = concatAll(N.MagmaSub)(0)
+ *
+ * assert.deepStrictEqual(subAll([1, 2, 3]), -6)
+ *
+ * @since 2.11.0
+ */
+var concatAll = function (M) { return function (startWith) { return function (as) {
+    return as.reduce(function (a, acc) { return M.concat(a, acc); }, startWith);
+}; }; };
+exports.concatAll = concatAll;
 
-/* global self, window, module, global, require */
-module.exports = function () {
-
-    "use strict";
-
-    var globalObject = void 0;
-
-    function isFunction(x) {
-        return typeof x === "function";
-    }
-
-    // Seek the global object
-    if (global !== undefined) {
-        globalObject = global;
-    } else if (window !== undefined && window.document) {
-        globalObject = window;
-    } else {
-        globalObject = self;
-    }
-
-    // Test for any native promise implementation, and if that
-    // implementation appears to conform to the specificaton.
-    // This code mostly nicked from the es6-promise module polyfill
-    // and then fooled with.
-    var hasPromiseSupport = function () {
-
-        // No promise object at all, and it's a non-starter
-        if (!globalObject.hasOwnProperty("Promise")) {
-            return false;
-        }
-
-        // There is a Promise object. Does it conform to the spec?
-        var P = globalObject.Promise;
-
-        // Some of these methods are missing from
-        // Firefox/Chrome experimental implementations
-        if (!P.hasOwnProperty("resolve") || !P.hasOwnProperty("reject")) {
-            return false;
-        }
-
-        if (!P.hasOwnProperty("all") || !P.hasOwnProperty("race")) {
-            return false;
-        }
-
-        // Older version of the spec had a resolver object
-        // as the arg rather than a function
-        return function () {
-
-            var resolve = void 0;
-
-            var p = new globalObject.Promise(function (r) {
-                resolve = r;
-            });
-
-            if (p) {
-                return isFunction(resolve);
-            }
-
-            return false;
-        }();
-    }();
-
-    // Export the native Promise implementation if it
-    // looks like it matches the spec
-    if (hasPromiseSupport) {
-        return globalObject.Promise;
-    }
-
-    //  Otherwise, return the es6-promise polyfill by @jaffathecake.
-    return __nccwpck_require__(8878).Promise;
-}();
 
 /***/ }),
 
-/***/ 7525:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 6685:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-
-/* global module, require */
-module.exports = function () {
-
-    "use strict";
-
-    // Get a promise object. This may be native, or it may be polyfilled
-
-    var ES6Promise = __nccwpck_require__(1023);
-
-    /**
-     * thatLooksLikeAPromiseToMe()
-     *
-     * Duck-types a promise.
-     *
-     * @param {object} o
-     * @return {bool} True if this resembles a promise
-     */
-    function thatLooksLikeAPromiseToMe(o) {
-        return o && typeof o.then === "function" && typeof o.catch === "function";
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ordDate = exports.ordNumber = exports.ordString = exports.ordBoolean = exports.ord = exports.getDualOrd = exports.getTupleOrd = exports.between = exports.clamp = exports.max = exports.min = exports.geq = exports.leq = exports.gt = exports.lt = exports.equals = exports.trivial = exports.Contravariant = exports.getMonoid = exports.getSemigroup = exports.URI = exports.contramap = exports.reverse = exports.tuple = exports.fromCompare = exports.equalsDefault = void 0;
+var Eq_1 = __nccwpck_require__(6964);
+var function_1 = __nccwpck_require__(6985);
+// -------------------------------------------------------------------------------------
+// defaults
+// -------------------------------------------------------------------------------------
+/**
+ * @category defaults
+ * @since 2.10.0
+ */
+var equalsDefault = function (compare) { return function (first, second) {
+    return first === second || compare(first, second) === 0;
+}; };
+exports.equalsDefault = equalsDefault;
+// -------------------------------------------------------------------------------------
+// constructors
+// -------------------------------------------------------------------------------------
+/**
+ * @category constructors
+ * @since 2.0.0
+ */
+var fromCompare = function (compare) { return ({
+    equals: exports.equalsDefault(compare),
+    compare: function (first, second) { return (first === second ? 0 : compare(first, second)); }
+}); };
+exports.fromCompare = fromCompare;
+// -------------------------------------------------------------------------------------
+// combinators
+// -------------------------------------------------------------------------------------
+/**
+ * Given a tuple of `Ord`s returns an `Ord` for the tuple.
+ *
+ * @example
+ * import { tuple } from 'fp-ts/Ord'
+ * import * as B from 'fp-ts/boolean'
+ * import * as S from 'fp-ts/string'
+ * import * as N from 'fp-ts/number'
+ *
+ * const O = tuple(S.Ord, N.Ord, B.Ord)
+ * assert.strictEqual(O.compare(['a', 1, true], ['b', 2, true]), -1)
+ * assert.strictEqual(O.compare(['a', 1, true], ['a', 2, true]), -1)
+ * assert.strictEqual(O.compare(['a', 1, true], ['a', 1, false]), 1)
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var tuple = function () {
+    var ords = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        ords[_i] = arguments[_i];
     }
-
-    /**
-     * promisify()
-     *
-     * Transforms callback-based function -- func(arg1, arg2 .. argN, callback) -- into
-     * an ES6-compatible Promise. Promisify provides a default callback of the form (error, result)
-     * and rejects when `error` is truthy. You can also supply settings object as the second argument.
-     *
-     * @param {function} original - The function to promisify
-     * @param {object} settings - Settings object
-     * @param {object} settings.thisArg - A `this` context to use. If not set, assume `settings` _is_ `thisArg`
-     * @param {bool} settings.multiArgs - Should multiple arguments be returned as an array?
-     * @return {function} A promisified version of `original`
-     */
-    return function promisify(original, settings) {
-
-        return function () {
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
+    return exports.fromCompare(function (first, second) {
+        var i = 0;
+        for (; i < ords.length - 1; i++) {
+            var r = ords[i].compare(first[i], second[i]);
+            if (r !== 0) {
+                return r;
             }
+        }
+        return ords[i].compare(first[i], second[i]);
+    });
+};
+exports.tuple = tuple;
+/**
+ * @category combinators
+ * @since 2.10.0
+ */
+var reverse = function (O) { return exports.fromCompare(function (first, second) { return O.compare(second, first); }); };
+exports.reverse = reverse;
+// -------------------------------------------------------------------------------------
+// non-pipeables
+// -------------------------------------------------------------------------------------
+/* istanbul ignore next */
+var contramap_ = function (fa, f) { return function_1.pipe(fa, exports.contramap(f)); };
+// -------------------------------------------------------------------------------------
+// type class members
+// -------------------------------------------------------------------------------------
+/**
+ * @category Contravariant
+ * @since 2.0.0
+ */
+var contramap = function (f) { return function (fa) {
+    return exports.fromCompare(function (first, second) { return fa.compare(f(first), f(second)); });
+}; };
+exports.contramap = contramap;
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+/**
+ * @category instances
+ * @since 2.0.0
+ */
+exports.URI = 'Ord';
+/**
+ * @category instances
+ * @since 2.0.0
+ */
+var getSemigroup = function () { return ({
+    concat: function (first, second) {
+        return exports.fromCompare(function (a, b) {
+            var ox = first.compare(a, b);
+            return ox !== 0 ? ox : second.compare(a, b);
+        });
+    }
+}); };
+exports.getSemigroup = getSemigroup;
+/**
+ * Returns a `Monoid` such that:
+ *
+ * - its `concat(ord1, ord2)` operation will order first by `ord1`, and then by `ord2`
+ * - its `empty` value is an `Ord` that always considers compared elements equal
+ *
+ * @example
+ * import { sort } from 'fp-ts/Array'
+ * import { contramap, reverse, getMonoid } from 'fp-ts/Ord'
+ * import * as S from 'fp-ts/string'
+ * import * as B from 'fp-ts/boolean'
+ * import { pipe } from 'fp-ts/function'
+ * import { concatAll } from 'fp-ts/Monoid'
+ * import * as N from 'fp-ts/number'
+ *
+ * interface User {
+ *   readonly id: number
+ *   readonly name: string
+ *   readonly age: number
+ *   readonly rememberMe: boolean
+ * }
+ *
+ * const byName = pipe(
+ *   S.Ord,
+ *   contramap((p: User) => p.name)
+ * )
+ *
+ * const byAge = pipe(
+ *   N.Ord,
+ *   contramap((p: User) => p.age)
+ * )
+ *
+ * const byRememberMe = pipe(
+ *   B.Ord,
+ *   contramap((p: User) => p.rememberMe)
+ * )
+ *
+ * const M = getMonoid<User>()
+ *
+ * const users: Array<User> = [
+ *   { id: 1, name: 'Guido', age: 47, rememberMe: false },
+ *   { id: 2, name: 'Guido', age: 46, rememberMe: true },
+ *   { id: 3, name: 'Giulio', age: 44, rememberMe: false },
+ *   { id: 4, name: 'Giulio', age: 44, rememberMe: true }
+ * ]
+ *
+ * // sort by name, then by age, then by `rememberMe`
+ * const O1 = concatAll(M)([byName, byAge, byRememberMe])
+ * assert.deepStrictEqual(sort(O1)(users), [
+ *   { id: 3, name: 'Giulio', age: 44, rememberMe: false },
+ *   { id: 4, name: 'Giulio', age: 44, rememberMe: true },
+ *   { id: 2, name: 'Guido', age: 46, rememberMe: true },
+ *   { id: 1, name: 'Guido', age: 47, rememberMe: false }
+ * ])
+ *
+ * // now `rememberMe = true` first, then by name, then by age
+ * const O2 = concatAll(M)([reverse(byRememberMe), byName, byAge])
+ * assert.deepStrictEqual(sort(O2)(users), [
+ *   { id: 4, name: 'Giulio', age: 44, rememberMe: true },
+ *   { id: 2, name: 'Guido', age: 46, rememberMe: true },
+ *   { id: 3, name: 'Giulio', age: 44, rememberMe: false },
+ *   { id: 1, name: 'Guido', age: 47, rememberMe: false }
+ * ])
+ *
+ * @category instances
+ * @since 2.4.0
+ */
+var getMonoid = function () { return ({
+    concat: exports.getSemigroup().concat,
+    empty: exports.fromCompare(function () { return 0; })
+}); };
+exports.getMonoid = getMonoid;
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Contravariant = {
+    URI: exports.URI,
+    contramap: contramap_
+};
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+/**
+ * @since 2.11.0
+ */
+exports.trivial = {
+    equals: function_1.constTrue,
+    compare: function_1.constant(0)
+};
+/**
+ * @since 2.11.0
+ */
+var equals = function (O) { return function (second) { return function (first) {
+    return first === second || O.compare(first, second) === 0;
+}; }; };
+exports.equals = equals;
+// TODO: curry in v3
+/**
+ * Test whether one value is _strictly less than_ another
+ *
+ * @since 2.0.0
+ */
+var lt = function (O) { return function (first, second) { return O.compare(first, second) === -1; }; };
+exports.lt = lt;
+// TODO: curry in v3
+/**
+ * Test whether one value is _strictly greater than_ another
+ *
+ * @since 2.0.0
+ */
+var gt = function (O) { return function (first, second) { return O.compare(first, second) === 1; }; };
+exports.gt = gt;
+// TODO: curry in v3
+/**
+ * Test whether one value is _non-strictly less than_ another
+ *
+ * @since 2.0.0
+ */
+var leq = function (O) { return function (first, second) { return O.compare(first, second) !== 1; }; };
+exports.leq = leq;
+// TODO: curry in v3
+/**
+ * Test whether one value is _non-strictly greater than_ another
+ *
+ * @since 2.0.0
+ */
+var geq = function (O) { return function (first, second) { return O.compare(first, second) !== -1; }; };
+exports.geq = geq;
+// TODO: curry in v3
+/**
+ * Take the minimum of two values. If they are considered equal, the first argument is chosen
+ *
+ * @since 2.0.0
+ */
+var min = function (O) { return function (first, second) {
+    return first === second || O.compare(first, second) < 1 ? first : second;
+}; };
+exports.min = min;
+// TODO: curry in v3
+/**
+ * Take the maximum of two values. If they are considered equal, the first argument is chosen
+ *
+ * @since 2.0.0
+ */
+var max = function (O) { return function (first, second) {
+    return first === second || O.compare(first, second) > -1 ? first : second;
+}; };
+exports.max = max;
+/**
+ * Clamp a value between a minimum and a maximum
+ *
+ * @since 2.0.0
+ */
+var clamp = function (O) {
+    var minO = exports.min(O);
+    var maxO = exports.max(O);
+    return function (low, hi) { return function (a) { return maxO(minO(a, hi), low); }; };
+};
+exports.clamp = clamp;
+/**
+ * Test whether a value is between a minimum and a maximum (inclusive)
+ *
+ * @since 2.0.0
+ */
+var between = function (O) {
+    var ltO = exports.lt(O);
+    var gtO = exports.gt(O);
+    return function (low, hi) { return function (a) { return (ltO(a, low) || gtO(a, hi) ? false : true); }; };
+};
+exports.between = between;
+// -------------------------------------------------------------------------------------
+// deprecated
+// -------------------------------------------------------------------------------------
+// tslint:disable: deprecation
+/**
+ * Use [`tuple`](#tuple) instead.
+ *
+ * @category combinators
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getTupleOrd = exports.tuple;
+/**
+ * Use [`reverse`](#reverse) instead.
+ *
+ * @category combinators
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getDualOrd = exports.reverse;
+/**
+ * Use [`Contravariant`](#contravariant) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.ord = exports.Contravariant;
+// default compare for primitive types
+function compare(first, second) {
+    return first < second ? -1 : first > second ? 1 : 0;
+}
+var strictOrd = {
+    equals: Eq_1.eqStrict.equals,
+    compare: compare
+};
+/**
+ * Use [`Ord`](./boolean.ts.html#ord) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.ordBoolean = strictOrd;
+/**
+ * Use [`Ord`](./string.ts.html#ord) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.ordString = strictOrd;
+/**
+ * Use [`Ord`](./number.ts.html#ord) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.ordNumber = strictOrd;
+/**
+ * Use [`Ord`](./Date.ts.html#ord) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.ordDate = 
+/*#__PURE__*/
+function_1.pipe(exports.ordNumber, 
+/*#__PURE__*/
+exports.contramap(function (date) { return date.valueOf(); }));
 
-            var returnMultipleArguments = settings && settings.multiArgs;
 
-            var target = void 0;
-            if (settings && settings.thisArg) {
-                target = settings.thisArg;
-            } else if (settings) {
-                target = settings;
-            }
+/***/ }),
 
-            // Return the promisified function
-            return new ES6Promise(function (resolve, reject) {
+/***/ 8630:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-                // Append the callback bound to the context
-                args.push(function callback(err) {
+"use strict";
 
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    for (var _len2 = arguments.length, values = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-                        values[_key2 - 1] = arguments[_key2];
-                    }
-
-                    if (false === !!returnMultipleArguments) {
-                        return resolve(values[0]);
-                    }
-
-                    resolve(values);
-                });
-
-                // Call the function
-                var response = original.apply(target, args);
-
-                // If it looks like original already returns a promise,
-                // then just resolve with that promise. Hopefully, the callback function we added will just be ignored.
-                if (thatLooksLikeAPromiseToMe(response)) {
-                    resolve(response);
-                }
-            });
-        };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.reduceRight = exports.foldMap = exports.reduce = exports.mapWithIndex = exports.map = exports.flatten = exports.duplicate = exports.extend = exports.chain = exports.ap = exports.alt = exports.altW = exports.of = exports.chunksOf = exports.splitAt = exports.chop = exports.chainWithIndex = exports.intersperse = exports.prependAll = exports.unzip = exports.zip = exports.zipWith = exports.modifyAt = exports.updateAt = exports.sort = exports.groupBy = exports.group = exports.reverse = exports.concat = exports.concatW = exports.fromArray = exports.unappend = exports.unprepend = exports.range = exports.replicate = exports.makeBy = exports.fromReadonlyArray = exports.rotate = exports.union = exports.sortBy = exports.uniq = exports.unsafeUpdateAt = exports.unsafeInsertAt = exports.append = exports.appendW = exports.prepend = exports.prependW = exports.isOutOfBound = exports.isNonEmpty = exports.empty = void 0;
+exports.uncons = exports.filterWithIndex = exports.filter = exports.groupSort = exports.updateLast = exports.modifyLast = exports.updateHead = exports.modifyHead = exports.matchRight = exports.matchLeft = exports.concatAll = exports.max = exports.min = exports.init = exports.last = exports.tail = exports.head = exports.apS = exports.bind = exports.bindTo = exports.Do = exports.Comonad = exports.Alt = exports.TraversableWithIndex = exports.Traversable = exports.FoldableWithIndex = exports.Foldable = exports.Monad = exports.chainFirst = exports.Chain = exports.Applicative = exports.apSecond = exports.apFirst = exports.Apply = exports.FunctorWithIndex = exports.Pointed = exports.flap = exports.Functor = exports.getUnionSemigroup = exports.getEq = exports.getSemigroup = exports.getShow = exports.URI = exports.extract = exports.traverseWithIndex = exports.sequence = exports.traverse = exports.reduceRightWithIndex = exports.foldMapWithIndex = exports.reduceWithIndex = void 0;
+exports.readonlyNonEmptyArray = exports.fold = exports.prependToAll = exports.insertAt = exports.snoc = exports.cons = exports.unsnoc = void 0;
+var Apply_1 = __nccwpck_require__(205);
+var Chain_1 = __nccwpck_require__(2372);
+var Eq_1 = __nccwpck_require__(6964);
+var function_1 = __nccwpck_require__(6985);
+var Functor_1 = __nccwpck_require__(5533);
+var _ = __importStar(__nccwpck_require__(1840));
+var Ord_1 = __nccwpck_require__(6685);
+var Se = __importStar(__nccwpck_require__(6339));
+// -------------------------------------------------------------------------------------
+// internal
+// -------------------------------------------------------------------------------------
+/**
+ * @internal
+ */
+exports.empty = _.emptyReadonlyArray;
+/**
+ * @internal
+ */
+exports.isNonEmpty = _.isNonEmpty;
+/**
+ * @internal
+ */
+var isOutOfBound = function (i, as) { return i < 0 || i >= as.length; };
+exports.isOutOfBound = isOutOfBound;
+/**
+ * @internal
+ */
+var prependW = function (head) { return function (tail) { return __spreadArray([head], tail); }; };
+exports.prependW = prependW;
+/**
+ * @internal
+ */
+exports.prepend = exports.prependW;
+/**
+ * @internal
+ */
+var appendW = function (end) { return function (init) { return __spreadArray(__spreadArray([], init), [end]); }; };
+exports.appendW = appendW;
+/**
+ * @internal
+ */
+exports.append = exports.appendW;
+/**
+ * @internal
+ */
+var unsafeInsertAt = function (i, a, as) {
+    if (exports.isNonEmpty(as)) {
+        var xs = _.fromReadonlyNonEmptyArray(as);
+        xs.splice(i, 0, a);
+        return xs;
+    }
+    return [a];
+};
+exports.unsafeInsertAt = unsafeInsertAt;
+/**
+ * @internal
+ */
+var unsafeUpdateAt = function (i, a, as) {
+    if (as[i] === a) {
+        return as;
+    }
+    else {
+        var xs = _.fromReadonlyNonEmptyArray(as);
+        xs[i] = a;
+        return xs;
+    }
+};
+exports.unsafeUpdateAt = unsafeUpdateAt;
+/**
+ * Remove duplicates from a `ReadonlyNonEmptyArray`, keeping the first occurrence of an element.
+ *
+ * @example
+ * import { uniq } from 'fp-ts/ReadonlyNonEmptyArray'
+ * import * as N from 'fp-ts/number'
+ *
+ * assert.deepStrictEqual(uniq(N.Eq)([1, 2, 1]), [1, 2])
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var uniq = function (E) { return function (as) {
+    if (as.length === 1) {
+        return as;
+    }
+    var out = [exports.head(as)];
+    var rest = exports.tail(as);
+    var _loop_1 = function (a) {
+        if (out.every(function (o) { return !E.equals(o, a); })) {
+            out.push(a);
+        }
     };
-}();
+    for (var _i = 0, rest_1 = rest; _i < rest_1.length; _i++) {
+        var a = rest_1[_i];
+        _loop_1(a);
+    }
+    return out;
+}; };
+exports.uniq = uniq;
+/**
+ * Sort the elements of a `ReadonlyNonEmptyArray` in increasing order, where elements are compared using first `ords[0]`, then `ords[1]`,
+ * etc...
+ *
+ * @example
+ * import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
+ * import { contramap } from 'fp-ts/Ord'
+ * import * as S from 'fp-ts/string'
+ * import * as N from 'fp-ts/number'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * interface Person {
+ *   name: string
+ *   age: number
+ * }
+ *
+ * const byName = pipe(S.Ord, contramap((p: Person) => p.name))
+ *
+ * const byAge = pipe(N.Ord, contramap((p: Person) => p.age))
+ *
+ * const sortByNameByAge = RNEA.sortBy([byName, byAge])
+ *
+ * const persons: RNEA.ReadonlyNonEmptyArray<Person> = [
+ *   { name: 'a', age: 1 },
+ *   { name: 'b', age: 3 },
+ *   { name: 'c', age: 2 },
+ *   { name: 'b', age: 2 }
+ * ]
+ *
+ * assert.deepStrictEqual(sortByNameByAge(persons), [
+ *   { name: 'a', age: 1 },
+ *   { name: 'b', age: 2 },
+ *   { name: 'b', age: 3 },
+ *   { name: 'c', age: 2 }
+ * ])
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var sortBy = function (ords) {
+    if (exports.isNonEmpty(ords)) {
+        var M = Ord_1.getMonoid();
+        return exports.sort(ords.reduce(M.concat, M.empty));
+    }
+    return function_1.identity;
+};
+exports.sortBy = sortBy;
+/**
+ * @category combinators
+ * @since 2.11.0
+ */
+var union = function (E) {
+    var uniqE = exports.uniq(E);
+    return function (second) { return function (first) { return uniqE(function_1.pipe(first, concat(second))); }; };
+};
+exports.union = union;
+/**
+ * Rotate a `ReadonlyNonEmptyArray` by `n` steps.
+ *
+ * @example
+ * import { rotate } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(rotate(2)([1, 2, 3, 4, 5]), [4, 5, 1, 2, 3])
+ * assert.deepStrictEqual(rotate(-2)([1, 2, 3, 4, 5]), [3, 4, 5, 1, 2])
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var rotate = function (n) { return function (as) {
+    var len = as.length;
+    var m = Math.round(n) % len;
+    if (exports.isOutOfBound(Math.abs(m), as) || m === 0) {
+        return as;
+    }
+    if (m < 0) {
+        var _a = exports.splitAt(-m)(as), f = _a[0], s = _a[1];
+        return function_1.pipe(s, concat(f));
+    }
+    else {
+        return exports.rotate(m - len)(as);
+    }
+}; };
+exports.rotate = rotate;
+// -------------------------------------------------------------------------------------
+// constructors
+// -------------------------------------------------------------------------------------
+/**
+ * Return a `ReadonlyNonEmptyArray` from a `ReadonlyArray` returning `none` if the input is empty.
+ *
+ * @category constructors
+ * @since 2.5.0
+ */
+var fromReadonlyArray = function (as) {
+    return exports.isNonEmpty(as) ? _.some(as) : _.none;
+};
+exports.fromReadonlyArray = fromReadonlyArray;
+/**
+ * Return a `ReadonlyNonEmptyArray` of length `n` with element `i` initialized with `f(i)`.
+ *
+ * **Note**. `n` is normalized to a natural number.
+ *
+ * @example
+ * import { makeBy } from 'fp-ts/ReadonlyNonEmptyArray'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * const double = (n: number): number => n * 2
+ * assert.deepStrictEqual(pipe(5, makeBy(double)), [0, 2, 4, 6, 8])
+ *
+ * @category constructors
+ * @since 2.11.0
+ */
+var makeBy = function (f) { return function (n) {
+    var j = Math.max(0, Math.floor(n));
+    var out = [f(0)];
+    for (var i = 1; i < j; i++) {
+        out.push(f(i));
+    }
+    return out;
+}; };
+exports.makeBy = makeBy;
+/**
+ * Create a `ReadonlyNonEmptyArray` containing a value repeated the specified number of times.
+ *
+ * **Note**. `n` is normalized to a natural number.
+ *
+ * @example
+ * import { replicate } from 'fp-ts/ReadonlyNonEmptyArray'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe(3, replicate('a')), ['a', 'a', 'a'])
+ *
+ * @category constructors
+ * @since 2.11.0
+ */
+var replicate = function (a) { return exports.makeBy(function () { return a; }); };
+exports.replicate = replicate;
+/**
+ * Create a `ReadonlyNonEmptyArray` containing a range of integers, including both endpoints.
+ *
+ * @example
+ * import { range } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(range(1, 5), [1, 2, 3, 4, 5])
+ *
+ * @category constructors
+ * @since 2.11.0
+ */
+var range = function (start, end) {
+    return start <= end ? exports.makeBy(function (i) { return start + i; })(end - start + 1) : [start];
+};
+exports.range = range;
+// -------------------------------------------------------------------------------------
+// destructors
+// -------------------------------------------------------------------------------------
+/**
+ * Return the tuple of the `head` and the `tail`.
+ *
+ * @example
+ * import { unprepend } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(unprepend([1, 2, 3, 4]), [1, [2, 3, 4]])
+ *
+ * @category destructors
+ * @since 2.9.0
+ */
+var unprepend = function (as) { return [exports.head(as), exports.tail(as)]; };
+exports.unprepend = unprepend;
+/**
+ * Return the tuple of the `init` and the `last`.
+ *
+ * @example
+ * import { unappend } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(unappend([1, 2, 3, 4]), [[1, 2, 3], 4])
+ *
+ * @category destructors
+ * @since 2.9.0
+ */
+var unappend = function (as) { return [exports.init(as), exports.last(as)]; };
+exports.unappend = unappend;
+// -------------------------------------------------------------------------------------
+// interop
+// -------------------------------------------------------------------------------------
+/**
+ * @category interop
+ * @since 2.5.0
+ */
+var fromArray = function (as) { return exports.fromReadonlyArray(as.slice()); };
+exports.fromArray = fromArray;
+function concatW(second) {
+    return function (first) { return first.concat(second); };
+}
+exports.concatW = concatW;
+function concat(x, y) {
+    return y ? x.concat(y) : function (y) { return y.concat(x); };
+}
+exports.concat = concat;
+/**
+ * @category combinators
+ * @since 2.5.0
+ */
+var reverse = function (as) {
+    return as.length === 1 ? as : __spreadArray([exports.last(as)], as.slice(0, -1).reverse());
+};
+exports.reverse = reverse;
+function group(E) {
+    return function (as) {
+        var len = as.length;
+        if (len === 0) {
+            return exports.empty;
+        }
+        var out = [];
+        var head = as[0];
+        var nea = [head];
+        for (var i = 1; i < len; i++) {
+            var a = as[i];
+            if (E.equals(a, head)) {
+                nea.push(a);
+            }
+            else {
+                out.push(nea);
+                head = a;
+                nea = [head];
+            }
+        }
+        out.push(nea);
+        return out;
+    };
+}
+exports.group = group;
+/**
+ * Splits an array into sub-non-empty-arrays stored in an object, based on the result of calling a `string`-returning
+ * function on each element, and grouping the results according to values returned
+ *
+ * @example
+ * import { groupBy } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(groupBy((s: string) => String(s.length))(['a', 'b', 'ab']), {
+ *   '1': ['a', 'b'],
+ *   '2': ['ab']
+ * })
+ *
+ * @category combinators
+ * @since 2.5.0
+ */
+var groupBy = function (f) { return function (as) {
+    var out = {};
+    for (var _i = 0, as_1 = as; _i < as_1.length; _i++) {
+        var a = as_1[_i];
+        var k = f(a);
+        if (out.hasOwnProperty(k)) {
+            out[k].push(a);
+        }
+        else {
+            out[k] = [a];
+        }
+    }
+    return out;
+}; };
+exports.groupBy = groupBy;
+/**
+ * @category combinators
+ * @since 2.5.0
+ */
+var sort = function (O) { return function (as) {
+    return as.length === 1 ? as : as.slice().sort(O.compare);
+}; };
+exports.sort = sort;
+/**
+ * @category combinators
+ * @since 2.5.0
+ */
+var updateAt = function (i, a) {
+    return exports.modifyAt(i, function () { return a; });
+};
+exports.updateAt = updateAt;
+/**
+ * @category combinators
+ * @since 2.5.0
+ */
+var modifyAt = function (i, f) { return function (as) { return (exports.isOutOfBound(i, as) ? _.none : _.some(exports.unsafeUpdateAt(i, f(as[i]), as))); }; };
+exports.modifyAt = modifyAt;
+/**
+ * @category combinators
+ * @since 2.5.1
+ */
+var zipWith = function (as, bs, f) {
+    var cs = [f(as[0], bs[0])];
+    var len = Math.min(as.length, bs.length);
+    for (var i = 1; i < len; i++) {
+        cs[i] = f(as[i], bs[i]);
+    }
+    return cs;
+};
+exports.zipWith = zipWith;
+function zip(as, bs) {
+    if (bs === undefined) {
+        return function (bs) { return zip(bs, as); };
+    }
+    return exports.zipWith(as, bs, function (a, b) { return [a, b]; });
+}
+exports.zip = zip;
+/**
+ * @category combinators
+ * @since 2.5.1
+ */
+var unzip = function (abs) {
+    var fa = [abs[0][0]];
+    var fb = [abs[0][1]];
+    for (var i = 1; i < abs.length; i++) {
+        fa[i] = abs[i][0];
+        fb[i] = abs[i][1];
+    }
+    return [fa, fb];
+};
+exports.unzip = unzip;
+/**
+ * Prepend an element to every member of a `ReadonlyNonEmptyArray`.
+ *
+ * @example
+ * import { prependAll } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(prependAll(9)([1, 2, 3, 4]), [9, 1, 9, 2, 9, 3, 9, 4])
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var prependAll = function (middle) { return function (as) {
+    var out = [middle, as[0]];
+    for (var i = 1; i < as.length; i++) {
+        out.push(middle, as[i]);
+    }
+    return out;
+}; };
+exports.prependAll = prependAll;
+/**
+ * Places an element in between members of a `ReadonlyNonEmptyArray`.
+ *
+ * @example
+ * import { intersperse } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(intersperse(9)([1, 2, 3, 4]), [1, 9, 2, 9, 3, 9, 4])
+ *
+ * @category combinators
+ * @since 2.9.0
+ */
+var intersperse = function (middle) { return function (as) {
+    var rest = exports.tail(as);
+    return exports.isNonEmpty(rest) ? function_1.pipe(rest, exports.prependAll(middle), exports.prepend(exports.head(as))) : as;
+}; };
+exports.intersperse = intersperse;
+/**
+ * @category combinators
+ * @since 2.10.0
+ */
+var chainWithIndex = function (f) { return function (as) {
+    var out = _.fromReadonlyNonEmptyArray(f(0, exports.head(as)));
+    for (var i = 1; i < as.length; i++) {
+        out.push.apply(out, f(i, as[i]));
+    }
+    return out;
+}; };
+exports.chainWithIndex = chainWithIndex;
+/**
+ * A useful recursion pattern for processing a `ReadonlyNonEmptyArray` to produce a new `ReadonlyNonEmptyArray`, often used for "chopping" up the input
+ * `ReadonlyNonEmptyArray`. Typically `chop` is called with some function that will consume an initial prefix of the `ReadonlyNonEmptyArray` and produce a
+ * value and the tail of the `ReadonlyNonEmptyArray`.
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var chop = function (f) { return function (as) {
+    var _a = f(as), b = _a[0], rest = _a[1];
+    var out = [b];
+    var next = rest;
+    while (exports.isNonEmpty(next)) {
+        var _b = f(next), b_1 = _b[0], rest_2 = _b[1];
+        out.push(b_1);
+        next = rest_2;
+    }
+    return out;
+}; };
+exports.chop = chop;
+/**
+ * Splits a `ReadonlyNonEmptyArray` into two pieces, the first piece has max `n` elements.
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var splitAt = function (n) { return function (as) {
+    var m = Math.max(1, n);
+    return m >= as.length ? [as, exports.empty] : [function_1.pipe(as.slice(1, m), exports.prepend(exports.head(as))), as.slice(m)];
+}; };
+exports.splitAt = splitAt;
+/**
+ * Splits a `ReadonlyNonEmptyArray` into length-`n` pieces. The last piece will be shorter if `n` does not evenly divide the length of
+ * the `ReadonlyNonEmptyArray`.
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var chunksOf = function (n) { return exports.chop(exports.splitAt(n)); };
+exports.chunksOf = chunksOf;
+// -------------------------------------------------------------------------------------
+// non-pipeables
+// -------------------------------------------------------------------------------------
+var _map = function (fa, f) { return function_1.pipe(fa, exports.map(f)); };
+/* istanbul ignore next */
+var _mapWithIndex = function (fa, f) { return function_1.pipe(fa, exports.mapWithIndex(f)); };
+var _ap = function (fab, fa) { return function_1.pipe(fab, exports.ap(fa)); };
+var _chain = function (ma, f) { return function_1.pipe(ma, exports.chain(f)); };
+/* istanbul ignore next */
+var _extend = function (wa, f) { return function_1.pipe(wa, exports.extend(f)); };
+/* istanbul ignore next */
+var _reduce = function (fa, b, f) { return function_1.pipe(fa, exports.reduce(b, f)); };
+/* istanbul ignore next */
+var _foldMap = function (M) {
+    var foldMapM = exports.foldMap(M);
+    return function (fa, f) { return function_1.pipe(fa, foldMapM(f)); };
+};
+/* istanbul ignore next */
+var _reduceRight = function (fa, b, f) { return function_1.pipe(fa, exports.reduceRight(b, f)); };
+/* istanbul ignore next */
+var _traverse = function (F) {
+    var traverseF = exports.traverse(F);
+    return function (ta, f) { return function_1.pipe(ta, traverseF(f)); };
+};
+/* istanbul ignore next */
+var _alt = function (fa, that) { return function_1.pipe(fa, exports.alt(that)); };
+/* istanbul ignore next */
+var _reduceWithIndex = function (fa, b, f) {
+    return function_1.pipe(fa, exports.reduceWithIndex(b, f));
+};
+/* istanbul ignore next */
+var _foldMapWithIndex = function (M) {
+    var foldMapWithIndexM = exports.foldMapWithIndex(M);
+    return function (fa, f) { return function_1.pipe(fa, foldMapWithIndexM(f)); };
+};
+/* istanbul ignore next */
+var _reduceRightWithIndex = function (fa, b, f) {
+    return function_1.pipe(fa, exports.reduceRightWithIndex(b, f));
+};
+/* istanbul ignore next */
+var _traverseWithIndex = function (F) {
+    var traverseWithIndexF = exports.traverseWithIndex(F);
+    return function (ta, f) { return function_1.pipe(ta, traverseWithIndexF(f)); };
+};
+// -------------------------------------------------------------------------------------
+// type class members
+// -------------------------------------------------------------------------------------
+/**
+ * @category Pointed
+ * @since 2.5.0
+ */
+exports.of = _.singleton;
+/**
+ * Less strict version of [`alt`](#alt).
+ *
+ * @category Alt
+ * @since 2.9.0
+ */
+var altW = function (that) { return function (as) { return function_1.pipe(as, concatW(that())); }; };
+exports.altW = altW;
+/**
+ * Identifies an associative operation on a type constructor. It is similar to `Semigroup`, except that it applies to
+ * types of kind `* -> *`.
+ *
+ * @category Alt
+ * @since 2.6.2
+ */
+exports.alt = exports.altW;
+/**
+ * @category Apply
+ * @since 2.5.0
+ */
+var ap = function (as) { return exports.chain(function (f) { return function_1.pipe(as, exports.map(f)); }); };
+exports.ap = ap;
+/**
+ * Composes computations in sequence, using the return value of one computation to determine the next computation.
+ *
+ * @category Monad
+ * @since 2.5.0
+ */
+var chain = function (f) { return exports.chainWithIndex(function (_, a) { return f(a); }); };
+exports.chain = chain;
+/**
+ * @category Extend
+ * @since 2.5.0
+ */
+var extend = function (f) { return function (as) {
+    var next = exports.tail(as);
+    var out = [f(as)];
+    while (exports.isNonEmpty(next)) {
+        out.push(f(next));
+        next = exports.tail(next);
+    }
+    return out;
+}; };
+exports.extend = extend;
+/**
+ * Derivable from `Extend`.
+ *
+ * @category combinators
+ * @since 2.5.0
+ */
+exports.duplicate = 
+/*#__PURE__*/
+exports.extend(function_1.identity);
+/**
+ * Derivable from `Chain`.
+ *
+ * @category combinators
+ * @since 2.5.0
+ */
+exports.flatten = 
+/*#__PURE__*/
+exports.chain(function_1.identity);
+/**
+ * `map` can be used to turn functions `(a: A) => B` into functions `(fa: F<A>) => F<B>` whose argument and return types
+ * use the type constructor `F` to represent some computational context.
+ *
+ * @category Functor
+ * @since 2.5.0
+ */
+var map = function (f) {
+    return exports.mapWithIndex(function (_, a) { return f(a); });
+};
+exports.map = map;
+/**
+ * @category FunctorWithIndex
+ * @since 2.5.0
+ */
+var mapWithIndex = function (f) { return function (as) {
+    var out = [f(0, exports.head(as))];
+    for (var i = 1; i < as.length; i++) {
+        out.push(f(i, as[i]));
+    }
+    return out;
+}; };
+exports.mapWithIndex = mapWithIndex;
+/**
+ * @category Foldable
+ * @since 2.5.0
+ */
+var reduce = function (b, f) {
+    return exports.reduceWithIndex(b, function (_, b, a) { return f(b, a); });
+};
+exports.reduce = reduce;
+/**
+ * **Note**. The constraint is relaxed: a `Semigroup` instead of a `Monoid`.
+ *
+ * @category Foldable
+ * @since 2.5.0
+ */
+var foldMap = function (S) { return function (f) { return function (as) {
+    return as.slice(1).reduce(function (s, a) { return S.concat(s, f(a)); }, f(as[0]));
+}; }; };
+exports.foldMap = foldMap;
+/**
+ * @category Foldable
+ * @since 2.5.0
+ */
+var reduceRight = function (b, f) {
+    return exports.reduceRightWithIndex(b, function (_, b, a) { return f(b, a); });
+};
+exports.reduceRight = reduceRight;
+/**
+ * @category FoldableWithIndex
+ * @since 2.5.0
+ */
+var reduceWithIndex = function (b, f) { return function (as) {
+    return as.reduce(function (b, a, i) { return f(i, b, a); }, b);
+}; };
+exports.reduceWithIndex = reduceWithIndex;
+/**
+ * **Note**. The constraint is relaxed: a `Semigroup` instead of a `Monoid`.
+ *
+ * @category FoldableWithIndex
+ * @since 2.5.0
+ */
+var foldMapWithIndex = function (S) { return function (f) { return function (as) { return as.slice(1).reduce(function (s, a, i) { return S.concat(s, f(i + 1, a)); }, f(0, as[0])); }; }; };
+exports.foldMapWithIndex = foldMapWithIndex;
+/**
+ * @category FoldableWithIndex
+ * @since 2.5.0
+ */
+var reduceRightWithIndex = function (b, f) { return function (as) { return as.reduceRight(function (b, a, i) { return f(i, a, b); }, b); }; };
+exports.reduceRightWithIndex = reduceRightWithIndex;
+/**
+ * @category Traversable
+ * @since 2.6.3
+ */
+var traverse = function (F) {
+    var traverseWithIndexF = exports.traverseWithIndex(F);
+    return function (f) { return traverseWithIndexF(function (_, a) { return f(a); }); };
+};
+exports.traverse = traverse;
+/**
+ * @category Traversable
+ * @since 2.6.3
+ */
+var sequence = function (F) { return exports.traverseWithIndex(F)(function_1.SK); };
+exports.sequence = sequence;
+/**
+ * @category TraversableWithIndex
+ * @since 2.6.3
+ */
+var traverseWithIndex = function (F) { return function (f) { return function (as) {
+    var out = F.map(f(0, exports.head(as)), exports.of);
+    for (var i = 1; i < as.length; i++) {
+        out = F.ap(F.map(out, function (bs) { return function (b) { return function_1.pipe(bs, exports.append(b)); }; }), f(i, as[i]));
+    }
+    return out;
+}; }; };
+exports.traverseWithIndex = traverseWithIndex;
+/**
+ * @category Comonad
+ * @since 2.6.3
+ */
+exports.extract = _.head;
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+/**
+ * @category instances
+ * @since 2.5.0
+ */
+exports.URI = 'ReadonlyNonEmptyArray';
+/**
+ * @category instances
+ * @since 2.5.0
+ */
+var getShow = function (S) { return ({
+    show: function (as) { return "[" + as.map(S.show).join(', ') + "]"; }
+}); };
+exports.getShow = getShow;
+/**
+ * Builds a `Semigroup` instance for `ReadonlyNonEmptyArray`
+ *
+ * @category instances
+ * @since 2.5.0
+ */
+var getSemigroup = function () { return ({
+    concat: concat
+}); };
+exports.getSemigroup = getSemigroup;
+/**
+ * @example
+ * import { getEq } from 'fp-ts/ReadonlyNonEmptyArray'
+ * import * as N from 'fp-ts/number'
+ *
+ * const E = getEq(N.Eq)
+ * assert.strictEqual(E.equals([1, 2], [1, 2]), true)
+ * assert.strictEqual(E.equals([1, 2], [1, 3]), false)
+ *
+ * @category instances
+ * @since 2.5.0
+ */
+var getEq = function (E) {
+    return Eq_1.fromEquals(function (xs, ys) { return xs.length === ys.length && xs.every(function (x, i) { return E.equals(x, ys[i]); }); });
+};
+exports.getEq = getEq;
+/**
+ * @category combinators
+ * @since 2.11.0
+ */
+var getUnionSemigroup = function (E) {
+    var unionE = exports.union(E);
+    return {
+        concat: function (first, second) { return unionE(second)(first); }
+    };
+};
+exports.getUnionSemigroup = getUnionSemigroup;
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Functor = {
+    URI: exports.URI,
+    map: _map
+};
+/**
+ * Derivable from `Functor`.
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+exports.flap = 
+/*#_PURE_*/
+Functor_1.flap(exports.Functor);
+/**
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Pointed = {
+    URI: exports.URI,
+    of: exports.of
+};
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.FunctorWithIndex = {
+    URI: exports.URI,
+    map: _map,
+    mapWithIndex: _mapWithIndex
+};
+/**
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Apply = {
+    URI: exports.URI,
+    map: _map,
+    ap: _ap
+};
+/**
+ * Combine two effectful actions, keeping only the result of the first.
+ *
+ * Derivable from `Apply`.
+ *
+ * @category combinators
+ * @since 2.5.0
+ */
+exports.apFirst = 
+/*#__PURE__*/
+Apply_1.apFirst(exports.Apply);
+/**
+ * Combine two effectful actions, keeping only the result of the second.
+ *
+ * Derivable from `Apply`.
+ *
+ * @category combinators
+ * @since 2.5.0
+ */
+exports.apSecond = 
+/*#__PURE__*/
+Apply_1.apSecond(exports.Apply);
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Applicative = {
+    URI: exports.URI,
+    map: _map,
+    ap: _ap,
+    of: exports.of
+};
+/**
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Chain = {
+    URI: exports.URI,
+    map: _map,
+    ap: _ap,
+    chain: _chain
+};
+/**
+ * Composes computations in sequence, using the return value of one computation to determine the next computation and
+ * keeping only the result of the first.
+ *
+ * Derivable from `Chain`.
+ *
+ * @category combinators
+ * @since 2.5.0
+ */
+exports.chainFirst = 
+/*#__PURE__*/
+Chain_1.chainFirst(exports.Chain);
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Monad = {
+    URI: exports.URI,
+    map: _map,
+    ap: _ap,
+    of: exports.of,
+    chain: _chain
+};
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Foldable = {
+    URI: exports.URI,
+    reduce: _reduce,
+    foldMap: _foldMap,
+    reduceRight: _reduceRight
+};
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.FoldableWithIndex = {
+    URI: exports.URI,
+    reduce: _reduce,
+    foldMap: _foldMap,
+    reduceRight: _reduceRight,
+    reduceWithIndex: _reduceWithIndex,
+    foldMapWithIndex: _foldMapWithIndex,
+    reduceRightWithIndex: _reduceRightWithIndex
+};
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Traversable = {
+    URI: exports.URI,
+    map: _map,
+    reduce: _reduce,
+    foldMap: _foldMap,
+    reduceRight: _reduceRight,
+    traverse: _traverse,
+    sequence: exports.sequence
+};
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.TraversableWithIndex = {
+    URI: exports.URI,
+    map: _map,
+    mapWithIndex: _mapWithIndex,
+    reduce: _reduce,
+    foldMap: _foldMap,
+    reduceRight: _reduceRight,
+    traverse: _traverse,
+    sequence: exports.sequence,
+    reduceWithIndex: _reduceWithIndex,
+    foldMapWithIndex: _foldMapWithIndex,
+    reduceRightWithIndex: _reduceRightWithIndex,
+    traverseWithIndex: _traverseWithIndex
+};
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Alt = {
+    URI: exports.URI,
+    map: _map,
+    alt: _alt
+};
+/**
+ * @category instances
+ * @since 2.7.0
+ */
+exports.Comonad = {
+    URI: exports.URI,
+    map: _map,
+    extend: _extend,
+    extract: exports.extract
+};
+// -------------------------------------------------------------------------------------
+// do notation
+// -------------------------------------------------------------------------------------
+/**
+ * @since 2.9.0
+ */
+exports.Do = 
+/*#__PURE__*/
+exports.of(_.emptyRecord);
+/**
+ * @since 2.8.0
+ */
+exports.bindTo = 
+/*#__PURE__*/
+Functor_1.bindTo(exports.Functor);
+/**
+ * @since 2.8.0
+ */
+exports.bind = 
+/*#__PURE__*/
+Chain_1.bind(exports.Chain);
+// -------------------------------------------------------------------------------------
+// pipeable sequence S
+// -------------------------------------------------------------------------------------
+/**
+ * @since 2.8.0
+ */
+exports.apS = 
+/*#__PURE__*/
+Apply_1.apS(exports.Apply);
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+/**
+ * @since 2.5.0
+ */
+exports.head = exports.extract;
+/**
+ * @since 2.5.0
+ */
+exports.tail = _.tail;
+/**
+ * @since 2.5.0
+ */
+var last = function (as) { return as[as.length - 1]; };
+exports.last = last;
+/**
+ * Get all but the last element of a non empty array, creating a new array.
+ *
+ * @example
+ * import { init } from 'fp-ts/ReadonlyNonEmptyArray'
+ *
+ * assert.deepStrictEqual(init([1, 2, 3]), [1, 2])
+ * assert.deepStrictEqual(init([1]), [])
+ *
+ * @since 2.5.0
+ */
+var init = function (as) { return as.slice(0, -1); };
+exports.init = init;
+/**
+ * @since 2.5.0
+ */
+var min = function (O) {
+    var S = Se.min(O);
+    return function (as) { return as.reduce(S.concat); };
+};
+exports.min = min;
+/**
+ * @since 2.5.0
+ */
+var max = function (O) {
+    var S = Se.max(O);
+    return function (as) { return as.reduce(S.concat); };
+};
+exports.max = max;
+/**
+ * @since 2.10.0
+ */
+var concatAll = function (S) { return function (as) { return as.reduce(S.concat); }; };
+exports.concatAll = concatAll;
+/**
+ * Break a `ReadonlyArray` into its first element and remaining elements.
+ *
+ * @category destructors
+ * @since 2.11.0
+ */
+var matchLeft = function (f) { return function (as) {
+    return f(exports.head(as), exports.tail(as));
+}; };
+exports.matchLeft = matchLeft;
+/**
+ * Break a `ReadonlyArray` into its initial elements and the last element.
+ *
+ * @category destructors
+ * @since 2.11.0
+ */
+var matchRight = function (f) { return function (as) {
+    return f(exports.init(as), exports.last(as));
+}; };
+exports.matchRight = matchRight;
+/**
+ * Apply a function to the head, creating a new `ReadonlyNonEmptyArray`.
+ *
+ * @since 2.11.0
+ */
+var modifyHead = function (f) { return function (as) { return __spreadArray([
+    f(exports.head(as))
+], exports.tail(as)); }; };
+exports.modifyHead = modifyHead;
+/**
+ * Change the head, creating a new `ReadonlyNonEmptyArray`.
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var updateHead = function (a) { return exports.modifyHead(function () { return a; }); };
+exports.updateHead = updateHead;
+/**
+ * Apply a function to the last element, creating a new `ReadonlyNonEmptyArray`.
+ *
+ * @since 2.11.0
+ */
+var modifyLast = function (f) { return function (as) {
+    return function_1.pipe(exports.init(as), exports.append(f(exports.last(as))));
+}; };
+exports.modifyLast = modifyLast;
+/**
+ * Change the last element, creating a new `ReadonlyNonEmptyArray`.
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var updateLast = function (a) { return exports.modifyLast(function () { return a; }); };
+exports.updateLast = updateLast;
+function groupSort(O) {
+    var sortO = exports.sort(O);
+    var groupO = group(O);
+    return function (as) { return (exports.isNonEmpty(as) ? groupO(sortO(as)) : exports.empty); };
+}
+exports.groupSort = groupSort;
+function filter(predicate) {
+    return exports.filterWithIndex(function (_, a) { return predicate(a); });
+}
+exports.filter = filter;
+/**
+ * Use [`filterWithIndex`](./ReadonlyArray.ts.html#filterwithindex) instead.
+ *
+ * @category combinators
+ * @since 2.5.0
+ * @deprecated
+ */
+var filterWithIndex = function (predicate) { return function (as) { return exports.fromReadonlyArray(as.filter(function (a, i) { return predicate(i, a); })); }; };
+exports.filterWithIndex = filterWithIndex;
+/**
+ * Use [`unprepend`](#unprepend) instead.
+ *
+ * @category destructors
+ * @since 2.10.0
+ * @deprecated
+ */
+exports.uncons = exports.unprepend;
+/**
+ * Use [`unappend`](#unappend) instead.
+ *
+ * @category destructors
+ * @since 2.10.0
+ * @deprecated
+ */
+exports.unsnoc = exports.unappend;
+function cons(head, tail) {
+    return tail === undefined ? exports.prepend(head) : function_1.pipe(tail, exports.prepend(head));
+}
+exports.cons = cons;
+/**
+ * Use [`append`](./ReadonlyArray.ts.html#append) instead.
+ *
+ * @category constructors
+ * @since 2.5.0
+ * @deprecated
+ */
+var snoc = function (init, end) { return function_1.pipe(init, concat([end])); };
+exports.snoc = snoc;
+/**
+ * Use [`insertAt`](./ReadonlyArray.ts.html#insertat) instead.
+ *
+ * @category combinators
+ * @since 2.5.0
+ * @deprecated
+ */
+var insertAt = function (i, a) { return function (as) {
+    return i < 0 || i > as.length ? _.none : _.some(exports.unsafeInsertAt(i, a, as));
+}; };
+exports.insertAt = insertAt;
+/**
+ * Use [`prependAll`](#prependall) instead.
+ *
+ * @category combinators
+ * @since 2.9.0
+ * @deprecated
+ */
+exports.prependToAll = exports.prependAll;
+/**
+ * Use [`concatAll`](#concatall) instead.
+ *
+ * @since 2.5.0
+ * @deprecated
+ */
+exports.fold = exports.concatAll;
+/**
+ * Use small, specific instances instead.
+ *
+ * @category instances
+ * @since 2.5.0
+ * @deprecated
+ */
+exports.readonlyNonEmptyArray = {
+    URI: exports.URI,
+    of: exports.of,
+    map: _map,
+    mapWithIndex: _mapWithIndex,
+    ap: _ap,
+    chain: _chain,
+    extend: _extend,
+    extract: exports.extract,
+    reduce: _reduce,
+    foldMap: _foldMap,
+    reduceRight: _reduceRight,
+    traverse: _traverse,
+    sequence: exports.sequence,
+    reduceWithIndex: _reduceWithIndex,
+    foldMapWithIndex: _foldMapWithIndex,
+    reduceRightWithIndex: _reduceRightWithIndex,
+    traverseWithIndex: _traverseWithIndex,
+    alt: _alt
+};
+
+
+/***/ }),
+
+/***/ 6339:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.semigroupProduct = exports.semigroupSum = exports.semigroupString = exports.getFunctionSemigroup = exports.semigroupAny = exports.semigroupAll = exports.fold = exports.getIntercalateSemigroup = exports.getMeetSemigroup = exports.getJoinSemigroup = exports.getDualSemigroup = exports.getStructSemigroup = exports.getTupleSemigroup = exports.getFirstSemigroup = exports.getLastSemigroup = exports.getObjectSemigroup = exports.semigroupVoid = exports.concatAll = exports.last = exports.first = exports.intercalate = exports.tuple = exports.struct = exports.reverse = exports.constant = exports.max = exports.min = void 0;
+/**
+ * If a type `A` can form a `Semigroup` it has an **associative** binary operation.
+ *
+ * ```ts
+ * interface Semigroup<A> {
+ *   readonly concat: (x: A, y: A) => A
+ * }
+ * ```
+ *
+ * Associativity means the following equality must hold for any choice of `x`, `y`, and `z`.
+ *
+ * ```ts
+ * concat(x, concat(y, z)) = concat(concat(x, y), z)
+ * ```
+ *
+ * A common example of a semigroup is the type `string` with the operation `+`.
+ *
+ * ```ts
+ * import { Semigroup } from 'fp-ts/Semigroup'
+ *
+ * const semigroupString: Semigroup<string> = {
+ *   concat: (x, y) => x + y
+ * }
+ *
+ * const x = 'x'
+ * const y = 'y'
+ * const z = 'z'
+ *
+ * semigroupString.concat(x, y) // 'xy'
+ *
+ * semigroupString.concat(x, semigroupString.concat(y, z)) // 'xyz'
+ *
+ * semigroupString.concat(semigroupString.concat(x, y), z) // 'xyz'
+ * ```
+ *
+ * *Adapted from https://typelevel.org/cats*
+ *
+ * @since 2.0.0
+ */
+var function_1 = __nccwpck_require__(6985);
+var _ = __importStar(__nccwpck_require__(1840));
+var M = __importStar(__nccwpck_require__(179));
+var Or = __importStar(__nccwpck_require__(6685));
+// -------------------------------------------------------------------------------------
+// constructors
+// -------------------------------------------------------------------------------------
+/**
+ * Get a semigroup where `concat` will return the minimum, based on the provided order.
+ *
+ * @example
+ * import * as N from 'fp-ts/number'
+ * import * as S from 'fp-ts/Semigroup'
+ *
+ * const S1 = S.min(N.Ord)
+ *
+ * assert.deepStrictEqual(S1.concat(1, 2), 1)
+ *
+ * @category constructors
+ * @since 2.10.0
+ */
+var min = function (O) { return ({
+    concat: Or.min(O)
+}); };
+exports.min = min;
+/**
+ * Get a semigroup where `concat` will return the maximum, based on the provided order.
+ *
+ * @example
+ * import * as N from 'fp-ts/number'
+ * import * as S from 'fp-ts/Semigroup'
+ *
+ * const S1 = S.max(N.Ord)
+ *
+ * assert.deepStrictEqual(S1.concat(1, 2), 2)
+ *
+ * @category constructors
+ * @since 2.10.0
+ */
+var max = function (O) { return ({
+    concat: Or.max(O)
+}); };
+exports.max = max;
+/**
+ * @category constructors
+ * @since 2.10.0
+ */
+var constant = function (a) { return ({
+    concat: function () { return a; }
+}); };
+exports.constant = constant;
+// -------------------------------------------------------------------------------------
+// combinators
+// -------------------------------------------------------------------------------------
+/**
+ * The dual of a `Semigroup`, obtained by swapping the arguments of `concat`.
+ *
+ * @example
+ * import { reverse } from 'fp-ts/Semigroup'
+ * import * as S from 'fp-ts/string'
+ *
+ * assert.deepStrictEqual(reverse(S.Semigroup).concat('a', 'b'), 'ba')
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+exports.reverse = M.reverse;
+/**
+ * Given a struct of semigroups returns a semigroup for the struct.
+ *
+ * @example
+ * import { struct } from 'fp-ts/Semigroup'
+ * import * as N from 'fp-ts/number'
+ *
+ * interface Point {
+ *   readonly x: number
+ *   readonly y: number
+ * }
+ *
+ * const S = struct<Point>({
+ *   x: N.SemigroupSum,
+ *   y: N.SemigroupSum
+ * })
+ *
+ * assert.deepStrictEqual(S.concat({ x: 1, y: 2 }, { x: 3, y: 4 }), { x: 4, y: 6 })
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var struct = function (semigroups) { return ({
+    concat: function (first, second) {
+        var r = {};
+        for (var k in semigroups) {
+            if (_.has.call(semigroups, k)) {
+                r[k] = semigroups[k].concat(first[k], second[k]);
+            }
+        }
+        return r;
+    }
+}); };
+exports.struct = struct;
+/**
+ * Given a tuple of semigroups returns a semigroup for the tuple.
+ *
+ * @example
+ * import { tuple } from 'fp-ts/Semigroup'
+ * import * as B from 'fp-ts/boolean'
+ * import * as N from 'fp-ts/number'
+ * import * as S from 'fp-ts/string'
+ *
+ * const S1 = tuple(S.Semigroup, N.SemigroupSum)
+ * assert.deepStrictEqual(S1.concat(['a', 1], ['b', 2]), ['ab', 3])
+ *
+ * const S2 = tuple(S.Semigroup, N.SemigroupSum, B.SemigroupAll)
+ * assert.deepStrictEqual(S2.concat(['a', 1, true], ['b', 2, false]), ['ab', 3, false])
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var tuple = function () {
+    var semigroups = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        semigroups[_i] = arguments[_i];
+    }
+    return ({
+        concat: function (first, second) { return semigroups.map(function (s, i) { return s.concat(first[i], second[i]); }); }
+    });
+};
+exports.tuple = tuple;
+/**
+ * Between each pair of elements insert `middle`.
+ *
+ * @example
+ * import { intercalate } from 'fp-ts/Semigroup'
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * const S1 = pipe(S.Semigroup, intercalate(' + '))
+ *
+ * assert.strictEqual(S1.concat('a', 'b'), 'a + b')
+ *
+ * @category combinators
+ * @since 2.10.0
+ */
+var intercalate = function (middle) { return function (S) { return ({
+    concat: function (x, y) { return S.concat(x, S.concat(middle, y)); }
+}); }; };
+exports.intercalate = intercalate;
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+/**
+ * Always return the first argument.
+ *
+ * @example
+ * import * as S from 'fp-ts/Semigroup'
+ *
+ * assert.deepStrictEqual(S.first<number>().concat(1, 2), 1)
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+var first = function () { return ({ concat: function_1.identity }); };
+exports.first = first;
+/**
+ * Always return the last argument.
+ *
+ * @example
+ * import * as S from 'fp-ts/Semigroup'
+ *
+ * assert.deepStrictEqual(S.last<number>().concat(1, 2), 2)
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+var last = function () { return ({ concat: function (_, y) { return y; } }); };
+exports.last = last;
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+/**
+ * Given a sequence of `as`, concat them and return the total.
+ *
+ * If `as` is empty, return the provided `startWith` value.
+ *
+ * @example
+ * import { concatAll } from 'fp-ts/Semigroup'
+ * import * as N from 'fp-ts/number'
+ *
+ * const sum = concatAll(N.SemigroupSum)(0)
+ *
+ * assert.deepStrictEqual(sum([1, 2, 3]), 6)
+ * assert.deepStrictEqual(sum([]), 0)
+ *
+ * @since 2.10.0
+ */
+exports.concatAll = M.concatAll;
+// -------------------------------------------------------------------------------------
+// deprecated
+// -------------------------------------------------------------------------------------
+/**
+ * Use `void` module instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.semigroupVoid = exports.constant(undefined);
+/**
+ * Use [`getAssignSemigroup`](./struct.ts.html#getAssignSemigroup) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+var getObjectSemigroup = function () { return ({
+    concat: function (first, second) { return Object.assign({}, first, second); }
+}); };
+exports.getObjectSemigroup = getObjectSemigroup;
+/**
+ * Use [`last`](#last) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getLastSemigroup = exports.last;
+/**
+ * Use [`first`](#first) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getFirstSemigroup = exports.first;
+/**
+ * Use [`tuple`](#tuple) instead.
+ *
+ * @category combinators
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getTupleSemigroup = exports.tuple;
+/**
+ * Use [`struct`](#struct) instead.
+ *
+ * @category combinators
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getStructSemigroup = exports.struct;
+/**
+ * Use [`reverse`](#reverse) instead.
+ *
+ * @category combinators
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getDualSemigroup = exports.reverse;
+/**
+ * Use [`max`](#max) instead.
+ *
+ * @category constructors
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getJoinSemigroup = exports.max;
+/**
+ * Use [`min`](#min) instead.
+ *
+ * @category constructors
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getMeetSemigroup = exports.min;
+/**
+ * Use [`intercalate`](#intercalate) instead.
+ *
+ * @category combinators
+ * @since 2.5.0
+ * @deprecated
+ */
+exports.getIntercalateSemigroup = exports.intercalate;
+function fold(S) {
+    var concatAllS = exports.concatAll(S);
+    return function (startWith, as) { return (as === undefined ? concatAllS(startWith) : concatAllS(startWith)(as)); };
+}
+exports.fold = fold;
+/**
+ * Use [`SemigroupAll`](./boolean.ts.html#SemigroupAll) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.semigroupAll = {
+    concat: function (x, y) { return x && y; }
+};
+/**
+ * Use [`SemigroupAny`](./boolean.ts.html#SemigroupAny) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.semigroupAny = {
+    concat: function (x, y) { return x || y; }
+};
+/**
+ * Use [`getSemigroup`](./function.ts.html#getSemigroup) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.getFunctionSemigroup = function_1.getSemigroup;
+/**
+ * Use [`Semigroup`](./string.ts.html#Semigroup) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.semigroupString = {
+    concat: function (x, y) { return x + y; }
+};
+/**
+ * Use [`SemigroupSum`](./number.ts.html#SemigroupSum) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.semigroupSum = {
+    concat: function (x, y) { return x + y; }
+};
+/**
+ * Use [`SemigroupProduct`](./number.ts.html#SemigroupProduct) instead.
+ *
+ * @category instances
+ * @since 2.0.0
+ * @deprecated
+ */
+exports.semigroupProduct = {
+    concat: function (x, y) { return x * y; }
+};
+
 
 /***/ }),
 
@@ -5029,11 +7139,117 @@ module.exports = function () {
 
 "use strict";
 
-/**
- * @since 2.0.0
- */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.bindTo_ = exports.bind_ = exports.hole = exports.pipe = exports.untupled = exports.tupled = exports.absurd = exports.decrement = exports.increment = exports.tuple = exports.flow = exports.flip = exports.constVoid = exports.constUndefined = exports.constNull = exports.constFalse = exports.constTrue = exports.constant = exports.not = exports.unsafeCoerce = exports.identity = void 0;
+exports.getEndomorphismMonoid = exports.not = exports.SK = exports.hole = exports.pipe = exports.untupled = exports.tupled = exports.absurd = exports.decrement = exports.increment = exports.tuple = exports.flow = exports.flip = exports.constVoid = exports.constUndefined = exports.constNull = exports.constFalse = exports.constTrue = exports.constant = exports.unsafeCoerce = exports.identity = exports.apply = exports.getRing = exports.getSemiring = exports.getMonoid = exports.getSemigroup = exports.getBooleanAlgebra = void 0;
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+/**
+ * @category instances
+ * @since 2.10.0
+ */
+var getBooleanAlgebra = function (B) { return function () { return ({
+    meet: function (x, y) { return function (a) { return B.meet(x(a), y(a)); }; },
+    join: function (x, y) { return function (a) { return B.join(x(a), y(a)); }; },
+    zero: function () { return B.zero; },
+    one: function () { return B.one; },
+    implies: function (x, y) { return function (a) { return B.implies(x(a), y(a)); }; },
+    not: function (x) { return function (a) { return B.not(x(a)); }; }
+}); }; };
+exports.getBooleanAlgebra = getBooleanAlgebra;
+/**
+ * Unary functions form a semigroup as long as you can provide a semigroup for the codomain.
+ *
+ * @example
+ * import { Predicate, getSemigroup } from 'fp-ts/function'
+ * import * as B from 'fp-ts/boolean'
+ *
+ * const f: Predicate<number> = (n) => n <= 2
+ * const g: Predicate<number> = (n) => n >= 0
+ *
+ * const S1 = getSemigroup(B.SemigroupAll)<number>()
+ *
+ * assert.deepStrictEqual(S1.concat(f, g)(1), true)
+ * assert.deepStrictEqual(S1.concat(f, g)(3), false)
+ *
+ * const S2 = getSemigroup(B.SemigroupAny)<number>()
+ *
+ * assert.deepStrictEqual(S2.concat(f, g)(1), true)
+ * assert.deepStrictEqual(S2.concat(f, g)(3), true)
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+var getSemigroup = function (S) { return function () { return ({
+    concat: function (f, g) { return function (a) { return S.concat(f(a), g(a)); }; }
+}); }; };
+exports.getSemigroup = getSemigroup;
+/**
+ * Unary functions form a monoid as long as you can provide a monoid for the codomain.
+ *
+ * @example
+ * import { Predicate } from 'fp-ts/Predicate'
+ * import { getMonoid } from 'fp-ts/function'
+ * import * as B from 'fp-ts/boolean'
+ *
+ * const f: Predicate<number> = (n) => n <= 2
+ * const g: Predicate<number> = (n) => n >= 0
+ *
+ * const M1 = getMonoid(B.MonoidAll)<number>()
+ *
+ * assert.deepStrictEqual(M1.concat(f, g)(1), true)
+ * assert.deepStrictEqual(M1.concat(f, g)(3), false)
+ *
+ * const M2 = getMonoid(B.MonoidAny)<number>()
+ *
+ * assert.deepStrictEqual(M2.concat(f, g)(1), true)
+ * assert.deepStrictEqual(M2.concat(f, g)(3), true)
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+var getMonoid = function (M) {
+    var getSemigroupM = exports.getSemigroup(M);
+    return function () { return ({
+        concat: getSemigroupM().concat,
+        empty: function () { return M.empty; }
+    }); };
+};
+exports.getMonoid = getMonoid;
+/**
+ * @category instances
+ * @since 2.10.0
+ */
+var getSemiring = function (S) { return ({
+    add: function (f, g) { return function (x) { return S.add(f(x), g(x)); }; },
+    zero: function () { return S.zero; },
+    mul: function (f, g) { return function (x) { return S.mul(f(x), g(x)); }; },
+    one: function () { return S.one; }
+}); };
+exports.getSemiring = getSemiring;
+/**
+ * @category instances
+ * @since 2.10.0
+ */
+var getRing = function (R) {
+    var S = exports.getSemiring(R);
+    return {
+        add: S.add,
+        mul: S.mul,
+        one: S.one,
+        zero: S.zero,
+        sub: function (f, g) { return function (x) { return R.sub(f(x), g(x)); }; }
+    };
+};
+exports.getRing = getRing;
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+/**
+ * @since 2.11.0
+ */
+var apply = function (a) { return function (f) { return f(a); }; };
+exports.apply = apply;
 /**
  * @since 2.0.0
  */
@@ -5045,13 +7261,6 @@ exports.identity = identity;
  * @since 2.0.0
  */
 exports.unsafeCoerce = identity;
-/**
- * @since 2.0.0
- */
-function not(predicate) {
-    return function (a) { return !predicate(a); };
-}
-exports.not = not;
 /**
  * @since 2.0.0
  */
@@ -5097,7 +7306,6 @@ constant(undefined);
  * @since 2.0.0
  */
 exports.constVoid = exports.constUndefined;
-// TODO: remove in v3
 /**
  * Flips the order of the arguments of a function of two arguments.
  *
@@ -5263,21 +7471,394 @@ exports.pipe = pipe;
  */
 exports.hole = absurd;
 /**
- * @internal
+ * @since 2.11.0
  */
-var bind_ = function (a, name, b) {
-    var _a;
-    return Object.assign({}, a, (_a = {}, _a[name] = b, _a));
-};
-exports.bind_ = bind_;
+var SK = function (_, b) { return b; };
+exports.SK = SK;
 /**
- * @internal
+ * Use `Predicate` module instead.
+ *
+ * @since 2.0.0
+ * @deprecated
  */
-var bindTo_ = function (name) { return function (b) {
-    var _a;
-    return (_a = {}, _a[name] = b, _a);
+function not(predicate) {
+    return function (a) { return !predicate(a); };
+}
+exports.not = not;
+/**
+ * Use `Endomorphism` module instead.
+ *
+ * @category instances
+ * @since 2.10.0
+ * @deprecated
+ */
+var getEndomorphismMonoid = function () { return ({
+    concat: function (first, second) { return flow(first, second); },
+    empty: identity
+}); };
+exports.getEndomorphismMonoid = getEndomorphismMonoid;
+
+
+/***/ }),
+
+/***/ 1840:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.fromReadonlyNonEmptyArray = exports.has = exports.emptyRecord = exports.emptyReadonlyArray = exports.tail = exports.head = exports.isNonEmpty = exports.singleton = exports.right = exports.left = exports.isRight = exports.isLeft = exports.some = exports.none = exports.isSome = exports.isNone = void 0;
+// -------------------------------------------------------------------------------------
+// Option
+// -------------------------------------------------------------------------------------
+/** @internal */
+var isNone = function (fa) { return fa._tag === 'None'; };
+exports.isNone = isNone;
+/** @internal */
+var isSome = function (fa) { return fa._tag === 'Some'; };
+exports.isSome = isSome;
+/** @internal */
+exports.none = { _tag: 'None' };
+/** @internal */
+var some = function (a) { return ({ _tag: 'Some', value: a }); };
+exports.some = some;
+// -------------------------------------------------------------------------------------
+// Either
+// -------------------------------------------------------------------------------------
+/** @internal */
+var isLeft = function (ma) { return ma._tag === 'Left'; };
+exports.isLeft = isLeft;
+/** @internal */
+var isRight = function (ma) { return ma._tag === 'Right'; };
+exports.isRight = isRight;
+/** @internal */
+var left = function (e) { return ({ _tag: 'Left', left: e }); };
+exports.left = left;
+/** @internal */
+var right = function (a) { return ({ _tag: 'Right', right: a }); };
+exports.right = right;
+// -------------------------------------------------------------------------------------
+// ReadonlyNonEmptyArray
+// -------------------------------------------------------------------------------------
+/** @internal */
+var singleton = function (a) { return [a]; };
+exports.singleton = singleton;
+/** @internal */
+var isNonEmpty = function (as) { return as.length > 0; };
+exports.isNonEmpty = isNonEmpty;
+/** @internal */
+var head = function (as) { return as[0]; };
+exports.head = head;
+/** @internal */
+var tail = function (as) { return as.slice(1); };
+exports.tail = tail;
+// -------------------------------------------------------------------------------------
+// empty
+// -------------------------------------------------------------------------------------
+/** @internal */
+exports.emptyReadonlyArray = [];
+/** @internal */
+exports.emptyRecord = {};
+// -------------------------------------------------------------------------------------
+// Record
+// -------------------------------------------------------------------------------------
+/** @internal */
+exports.has = Object.prototype.hasOwnProperty;
+// -------------------------------------------------------------------------------------
+// NonEmptyArray
+// -------------------------------------------------------------------------------------
+/** @internal */
+var fromReadonlyNonEmptyArray = function (as) { return __spreadArray([as[0]], as.slice(1)); };
+exports.fromReadonlyNonEmptyArray = fromReadonlyNonEmptyArray;
+
+
+/***/ }),
+
+/***/ 5189:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.endsWith = exports.startsWith = exports.includes = exports.split = exports.size = exports.isEmpty = exports.empty = exports.slice = exports.trimRight = exports.trimLeft = exports.trim = exports.replace = exports.toLowerCase = exports.toUpperCase = exports.isString = exports.Show = exports.Ord = exports.Monoid = exports.Semigroup = exports.Eq = void 0;
+var ReadonlyNonEmptyArray_1 = __nccwpck_require__(8630);
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ *
+ * assert.deepStrictEqual(S.Eq.equals('a', 'a'), true)
+ * assert.deepStrictEqual(S.Eq.equals('a', 'b'), false)
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Eq = {
+    equals: function (first, second) { return first === second; }
+};
+/**
+ * `string` semigroup under concatenation.
+ *
+ * @example
+ * import * as S from 'fp-ts/string'
+ *
+ * assert.deepStrictEqual(S.Semigroup.concat('a', 'b'), 'ab')
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Semigroup = {
+    concat: function (first, second) { return first + second; }
+};
+/**
+ * `string` monoid under concatenation.
+ *
+ * The `empty` value is `''`.
+ *
+ * @example
+ * import * as S from 'fp-ts/string'
+ *
+ * assert.deepStrictEqual(S.Monoid.concat('a', 'b'), 'ab')
+ * assert.deepStrictEqual(S.Monoid.concat('a', S.Monoid.empty), 'a')
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Monoid = {
+    concat: exports.Semigroup.concat,
+    empty: ''
+};
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ *
+ * assert.deepStrictEqual(S.Ord.compare('a', 'a'), 0)
+ * assert.deepStrictEqual(S.Ord.compare('a', 'b'), -1)
+ * assert.deepStrictEqual(S.Ord.compare('b', 'a'), 1)
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Ord = {
+    equals: exports.Eq.equals,
+    compare: function (first, second) { return (first < second ? -1 : first > second ? 1 : 0); }
+};
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ *
+ * assert.deepStrictEqual(S.Show.show('a'), '"a"')
+ *
+ * @category instances
+ * @since 2.10.0
+ */
+exports.Show = {
+    show: function (s) { return JSON.stringify(s); }
+};
+// -------------------------------------------------------------------------------------
+// refinements
+// -------------------------------------------------------------------------------------
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ *
+ * assert.deepStrictEqual(S.isString('a'), true)
+ * assert.deepStrictEqual(S.isString(1), false)
+ *
+ * @category refinements
+ * @since 2.11.0
+ */
+var isString = function (u) { return typeof u === 'string'; };
+exports.isString = isString;
+// -------------------------------------------------------------------------------------
+// combinators
+// -------------------------------------------------------------------------------------
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('a', S.toUpperCase), 'A')
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var toUpperCase = function (s) { return s.toUpperCase(); };
+exports.toUpperCase = toUpperCase;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('A', S.toLowerCase), 'a')
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var toLowerCase = function (s) { return s.toLowerCase(); };
+exports.toLowerCase = toLowerCase;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('abc', S.replace('b', 'd')), 'adc')
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var replace = function (searchValue, replaceValue) { return function (s) {
+    return s.replace(searchValue, replaceValue);
 }; };
-exports.bindTo_ = bindTo_;
+exports.replace = replace;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe(' a ', S.trim), 'a')
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var trim = function (s) { return s.trim(); };
+exports.trim = trim;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe(' a ', S.trimLeft), 'a ')
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var trimLeft = function (s) { return s.trimLeft(); };
+exports.trimLeft = trimLeft;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe(' a ', S.trimRight), ' a')
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var trimRight = function (s) { return s.trimRight(); };
+exports.trimRight = trimRight;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('abcd', S.slice(1, 3)), 'bc')
+ *
+ * @category combinators
+ * @since 2.11.0
+ */
+var slice = function (start, end) { return function (s) { return s.slice(start, end); }; };
+exports.slice = slice;
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+/**
+ * An empty `string`.
+ *
+ * @since 2.10.0
+ */
+exports.empty = '';
+/**
+ * Test whether a `string` is empty.
+ *
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('', S.isEmpty), true)
+ * assert.deepStrictEqual(pipe('a', S.isEmpty), false)
+ *
+ * @since 2.10.0
+ */
+var isEmpty = function (s) { return s.length === 0; };
+exports.isEmpty = isEmpty;
+/**
+ * Calculate the number of characters in a `string`.
+ *
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('abc', S.size), 3)
+ *
+ * @since 2.10.0
+ */
+var size = function (s) { return s.length; };
+exports.size = size;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('abc', S.split('')), ['a', 'b', 'c'])
+ * assert.deepStrictEqual(pipe('', S.split('')), [''])
+ *
+ * @since 2.11.0
+ */
+var split = function (separator) { return function (s) {
+    var out = s.split(separator);
+    return ReadonlyNonEmptyArray_1.isNonEmpty(out) ? out : [s];
+}; };
+exports.split = split;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('abc', S.includes('b')), true)
+ * assert.deepStrictEqual(pipe('abc', S.includes('d')), false)
+ *
+ * @since 2.11.0
+ */
+var includes = function (searchString, position) { return function (s) {
+    return s.includes(searchString, position);
+}; };
+exports.includes = includes;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('abc', S.startsWith('a')), true)
+ * assert.deepStrictEqual(pipe('bc', S.startsWith('a')), false)
+ *
+ * @since 2.11.0
+ */
+var startsWith = function (searchString, position) { return function (s) {
+    return s.startsWith(searchString, position);
+}; };
+exports.startsWith = startsWith;
+/**
+ * @example
+ * import * as S from 'fp-ts/string'
+ * import { pipe } from 'fp-ts/function'
+ *
+ * assert.deepStrictEqual(pipe('abc', S.endsWith('c')), true)
+ * assert.deepStrictEqual(pipe('ab', S.endsWith('c')), false)
+ *
+ * @since 2.11.0
+ */
+var endsWith = function (searchString, position) { return function (s) {
+    return s.endsWith(searchString, position);
+}; };
+exports.endsWith = endsWith;
 
 
 /***/ }),
@@ -7319,1070 +9900,284 @@ module.exports={
 
 /***/ }),
 
-/***/ 3436:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 5098:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-/**
- * Module dependencies.
- */
+"use strict";
 
-var net = __nccwpck_require__(1631);
-var tls = __nccwpck_require__(4016);
-var url = __nccwpck_require__(8835);
-var assert = __nccwpck_require__(2357);
-var Agent = __nccwpck_require__(8049);
-var inherits = __nccwpck_require__(1669).inherits;
-var debug = __nccwpck_require__(6785)('https-proxy-agent');
-
-/**
- * Module exports.
- */
-
-module.exports = HttpsProxyAgent;
-
-/**
- * The `HttpsProxyAgent` implements an HTTP Agent subclass that connects to the
- * specified "HTTP(s) proxy server" in order to proxy HTTPS requests.
- *
- * @api public
- */
-
-function HttpsProxyAgent(opts) {
-	if (!(this instanceof HttpsProxyAgent)) return new HttpsProxyAgent(opts);
-	if ('string' == typeof opts) opts = url.parse(opts);
-	if (!opts)
-		throw new Error(
-			'an HTTP(S) proxy server `host` and `port` must be specified!'
-		);
-	debug('creating new HttpsProxyAgent instance: %o', opts);
-	Agent.call(this, opts);
-
-	var proxy = Object.assign({}, opts);
-
-	// if `true`, then connect to the proxy server over TLS. defaults to `false`.
-	this.secureProxy = proxy.protocol
-		? /^https:?$/i.test(proxy.protocol)
-		: false;
-
-	// prefer `hostname` over `host`, and set the `port` if needed
-	proxy.host = proxy.hostname || proxy.host;
-	proxy.port = +proxy.port || (this.secureProxy ? 443 : 80);
-
-	// ALPN is supported by Node.js >= v5.
-	// attempt to negotiate http/1.1 for proxy servers that support http/2
-	if (this.secureProxy && !('ALPNProtocols' in proxy)) {
-		proxy.ALPNProtocols = ['http 1.1'];
-	}
-
-	if (proxy.host && proxy.path) {
-		// if both a `host` and `path` are specified then it's most likely the
-		// result of a `url.parse()` call... we need to remove the `path` portion so
-		// that `net.connect()` doesn't attempt to open that as a unix socket file.
-		delete proxy.path;
-		delete proxy.pathname;
-	}
-
-	this.proxy = proxy;
-	this.defaultPort = 443;
-}
-inherits(HttpsProxyAgent, Agent);
-
-/**
- * Called when the node-core HTTP client library is creating a new HTTP request.
- *
- * @api public
- */
-
-HttpsProxyAgent.prototype.callback = function connect(req, opts, fn) {
-	var proxy = this.proxy;
-
-	// create a socket connection to the proxy server
-	var socket;
-	if (this.secureProxy) {
-		socket = tls.connect(proxy);
-	} else {
-		socket = net.connect(proxy);
-	}
-
-	// we need to buffer any HTTP traffic that happens with the proxy before we get
-	// the CONNECT response, so that if the response is anything other than an "200"
-	// response code, then we can re-play the "data" events on the socket once the
-	// HTTP parser is hooked up...
-	var buffers = [];
-	var buffersLength = 0;
-
-	function read() {
-		var b = socket.read();
-		if (b) ondata(b);
-		else socket.once('readable', read);
-	}
-
-	function cleanup() {
-		socket.removeListener('end', onend);
-		socket.removeListener('error', onerror);
-		socket.removeListener('close', onclose);
-		socket.removeListener('readable', read);
-	}
-
-	function onclose(err) {
-		debug('onclose had error %o', err);
-	}
-
-	function onend() {
-		debug('onend');
-	}
-
-	function onerror(err) {
-		cleanup();
-		fn(err);
-	}
-
-	function ondata(b) {
-		buffers.push(b);
-		buffersLength += b.length;
-		var buffered = Buffer.concat(buffers, buffersLength);
-		var str = buffered.toString('ascii');
-
-		if (!~str.indexOf('\r\n\r\n')) {
-			// keep buffering
-			debug('have not received end of HTTP headers yet...');
-			read();
-			return;
-		}
-
-		var firstLine = str.substring(0, str.indexOf('\r\n'));
-		var statusCode = +firstLine.split(' ')[1];
-		debug('got proxy server response: %o', firstLine);
-
-		if (200 == statusCode) {
-			// 200 Connected status code!
-			var sock = socket;
-
-			// nullify the buffered data since we won't be needing it
-			buffers = buffered = null;
-
-			if (opts.secureEndpoint) {
-				// since the proxy is connecting to an SSL server, we have
-				// to upgrade this socket connection to an SSL connection
-				debug(
-					'upgrading proxy-connected socket to TLS connection: %o',
-					opts.host
-				);
-				opts.socket = socket;
-				opts.servername = opts.servername || opts.host;
-				opts.host = null;
-				opts.hostname = null;
-				opts.port = null;
-				sock = tls.connect(opts);
-			}
-
-			cleanup();
-			req.once('socket', resume);
-			fn(null, sock);
-		} else {
-			// some other status code that's not 200... need to re-play the HTTP header
-			// "data" events onto the socket once the HTTP machinery is attached so
-			// that the node core `http` can parse and handle the error status code
-			cleanup();
-
-			// the original socket is closed, and a new closed socket is
-			// returned instead, so that the proxy doesn't get the HTTP request
-			// written to it (which may contain `Authorization` headers or other
-			// sensitive data).
-			//
-			// See: https://hackerone.com/reports/541502
-			socket.destroy();
-			socket = new net.Socket();
-			socket.readable = true;
-
-
-			// save a reference to the concat'd Buffer for the `onsocket` callback
-			buffers = buffered;
-
-			// need to wait for the "socket" event to re-play the "data" events
-			req.once('socket', onsocket);
-
-			fn(null, socket);
-		}
-	}
-
-	function onsocket(socket) {
-		debug('replaying proxy buffer for failed request');
-		assert(socket.listenerCount('data') > 0);
-
-		// replay the "buffers" Buffer onto the `socket`, since at this point
-		// the HTTP module machinery has been hooked up for the user
-		socket.push(buffers);
-
-		// nullify the cached Buffer instance
-		buffers = null;
-	}
-
-	socket.on('error', onerror);
-	socket.on('close', onclose);
-	socket.on('end', onend);
-
-	read();
-
-	var hostname = opts.host + ':' + opts.port;
-	var msg = 'CONNECT ' + hostname + ' HTTP/1.1\r\n';
-
-	var headers = Object.assign({}, proxy.headers);
-	if (proxy.auth) {
-		headers['Proxy-Authorization'] =
-			'Basic ' + Buffer.from(proxy.auth).toString('base64');
-	}
-
-	// the Host header should only include the port
-	// number when it is a non-standard port
-	var host = opts.host;
-	if (!isDefaultPort(opts.port, opts.secureEndpoint)) {
-		host += ':' + opts.port;
-	}
-	headers['Host'] = host;
-
-	headers['Connection'] = 'close';
-	Object.keys(headers).forEach(function(name) {
-		msg += name + ': ' + headers[name] + '\r\n';
-	});
-
-	socket.write(msg + '\r\n');
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
-
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const net_1 = __importDefault(__nccwpck_require__(1631));
+const tls_1 = __importDefault(__nccwpck_require__(4016));
+const url_1 = __importDefault(__nccwpck_require__(8835));
+const assert_1 = __importDefault(__nccwpck_require__(2357));
+const debug_1 = __importDefault(__nccwpck_require__(8237));
+const agent_base_1 = __nccwpck_require__(9690);
+const parse_proxy_response_1 = __importDefault(__nccwpck_require__(595));
+const debug = debug_1.default('https-proxy-agent:agent');
 /**
- * Resumes a socket.
+ * The `HttpsProxyAgent` implements an HTTP Agent subclass that connects to
+ * the specified "HTTP(s) proxy server" in order to proxy HTTPS requests.
  *
- * @param {(net.Socket|tls.Socket)} socket The socket to resume
+ * Outgoing HTTP requests are first tunneled through the proxy server using the
+ * `CONNECT` HTTP request method to establish a connection to the proxy server,
+ * and then the proxy server connects to the destination target and issues the
+ * HTTP request from the proxy server.
+ *
+ * `https:` requests have their socket connection upgraded to TLS once
+ * the connection to the proxy server has been established.
+ *
  * @api public
  */
-
+class HttpsProxyAgent extends agent_base_1.Agent {
+    constructor(_opts) {
+        let opts;
+        if (typeof _opts === 'string') {
+            opts = url_1.default.parse(_opts);
+        }
+        else {
+            opts = _opts;
+        }
+        if (!opts) {
+            throw new Error('an HTTP(S) proxy server `host` and `port` must be specified!');
+        }
+        debug('creating new HttpsProxyAgent instance: %o', opts);
+        super(opts);
+        const proxy = Object.assign({}, opts);
+        // If `true`, then connect to the proxy server over TLS.
+        // Defaults to `false`.
+        this.secureProxy = opts.secureProxy || isHTTPS(proxy.protocol);
+        // Prefer `hostname` over `host`, and set the `port` if needed.
+        proxy.host = proxy.hostname || proxy.host;
+        if (typeof proxy.port === 'string') {
+            proxy.port = parseInt(proxy.port, 10);
+        }
+        if (!proxy.port && proxy.host) {
+            proxy.port = this.secureProxy ? 443 : 80;
+        }
+        // ALPN is supported by Node.js >= v5.
+        // attempt to negotiate http/1.1 for proxy servers that support http/2
+        if (this.secureProxy && !('ALPNProtocols' in proxy)) {
+            proxy.ALPNProtocols = ['http 1.1'];
+        }
+        if (proxy.host && proxy.path) {
+            // If both a `host` and `path` are specified then it's most likely
+            // the result of a `url.parse()` call... we need to remove the
+            // `path` portion so that `net.connect()` doesn't attempt to open
+            // that as a Unix socket file.
+            delete proxy.path;
+            delete proxy.pathname;
+        }
+        this.proxy = proxy;
+    }
+    /**
+     * Called when the node-core HTTP client library is creating a
+     * new HTTP request.
+     *
+     * @api protected
+     */
+    callback(req, opts) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { proxy, secureProxy } = this;
+            // Create a socket connection to the proxy server.
+            let socket;
+            if (secureProxy) {
+                debug('Creating `tls.Socket`: %o', proxy);
+                socket = tls_1.default.connect(proxy);
+            }
+            else {
+                debug('Creating `net.Socket`: %o', proxy);
+                socket = net_1.default.connect(proxy);
+            }
+            const headers = Object.assign({}, proxy.headers);
+            const hostname = `${opts.host}:${opts.port}`;
+            let payload = `CONNECT ${hostname} HTTP/1.1\r\n`;
+            // Inject the `Proxy-Authorization` header if necessary.
+            if (proxy.auth) {
+                headers['Proxy-Authorization'] = `Basic ${Buffer.from(proxy.auth).toString('base64')}`;
+            }
+            // The `Host` header should only include the port
+            // number when it is not the default port.
+            let { host, port, secureEndpoint } = opts;
+            if (!isDefaultPort(port, secureEndpoint)) {
+                host += `:${port}`;
+            }
+            headers.Host = host;
+            headers.Connection = 'close';
+            for (const name of Object.keys(headers)) {
+                payload += `${name}: ${headers[name]}\r\n`;
+            }
+            const proxyResponsePromise = parse_proxy_response_1.default(socket);
+            socket.write(`${payload}\r\n`);
+            const { statusCode, buffered } = yield proxyResponsePromise;
+            if (statusCode === 200) {
+                req.once('socket', resume);
+                if (opts.secureEndpoint) {
+                    const servername = opts.servername || opts.host;
+                    if (!servername) {
+                        throw new Error('Could not determine "servername"');
+                    }
+                    // The proxy is connecting to a TLS server, so upgrade
+                    // this socket connection to a TLS connection.
+                    debug('Upgrading socket connection to TLS');
+                    return tls_1.default.connect(Object.assign(Object.assign({}, omit(opts, 'host', 'hostname', 'path', 'port')), { socket,
+                        servername }));
+                }
+                return socket;
+            }
+            // Some other status code that's not 200... need to re-play the HTTP
+            // header "data" events onto the socket once the HTTP machinery is
+            // attached so that the node core `http` can parse and handle the
+            // error status code.
+            // Close the original socket, and a new "fake" socket is returned
+            // instead, so that the proxy doesn't get the HTTP request
+            // written to it (which may contain `Authorization` headers or other
+            // sensitive data).
+            //
+            // See: https://hackerone.com/reports/541502
+            socket.destroy();
+            const fakeSocket = new net_1.default.Socket();
+            fakeSocket.readable = true;
+            // Need to wait for the "socket" event to re-play the "data" events.
+            req.once('socket', (s) => {
+                debug('replaying proxy buffer for failed request');
+                assert_1.default(s.listenerCount('data') > 0);
+                // Replay the "buffered" Buffer onto the fake `socket`, since at
+                // this point the HTTP module machinery has been hooked up for
+                // the user.
+                s.push(buffered);
+                s.push(null);
+            });
+            return fakeSocket;
+        });
+    }
+}
+exports.default = HttpsProxyAgent;
 function resume(socket) {
-	socket.resume();
+    socket.resume();
 }
-
 function isDefaultPort(port, secure) {
-	return Boolean((!secure && port === 80) || (secure && port === 443));
+    return Boolean((!secure && port === 80) || (secure && port === 443));
 }
-
-
-/***/ }),
-
-/***/ 814:
-/***/ ((module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-/* eslint-env browser */
-
-/**
- * This is the web browser implementation of `debug()`.
- */
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-exports.storage = localstorage();
-/**
- * Colors.
- */
-
-exports.colors = ['#0000CC', '#0000FF', '#0033CC', '#0033FF', '#0066CC', '#0066FF', '#0099CC', '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF', '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC', '#3366FF', '#3399CC', '#3399FF', '#33CC00', '#33CC33', '#33CC66', '#33CC99', '#33CCCC', '#33CCFF', '#6600CC', '#6600FF', '#6633CC', '#6633FF', '#66CC00', '#66CC33', '#9900CC', '#9900FF', '#9933CC', '#9933FF', '#99CC00', '#99CC33', '#CC0000', '#CC0033', '#CC0066', '#CC0099', '#CC00CC', '#CC00FF', '#CC3300', '#CC3333', '#CC3366', '#CC3399', '#CC33CC', '#CC33FF', '#CC6600', '#CC6633', '#CC9900', '#CC9933', '#CCCC00', '#CCCC33', '#FF0000', '#FF0033', '#FF0066', '#FF0099', '#FF00CC', '#FF00FF', '#FF3300', '#FF3333', '#FF3366', '#FF3399', '#FF33CC', '#FF33FF', '#FF6600', '#FF6633', '#FF9900', '#FF9933', '#FFCC00', '#FFCC33'];
-/**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-// eslint-disable-next-line complexity
-
-function useColors() {
-  // NB: In an Electron preload script, document will be defined but not fully
-  // initialized. Since we know we're in Chrome, we'll just detect this case
-  // explicitly
-  if (typeof window !== 'undefined' && window.process && (window.process.type === 'renderer' || window.process.__nwjs)) {
-    return true;
-  } // Internet Explorer and Edge do not support colors.
-
-
-  if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
-    return false;
-  } // Is webkit? http://stackoverflow.com/a/16459606/376773
-  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
-
-
-  return typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || // Is firebug? http://stackoverflow.com/a/398120/376773
-  typeof window !== 'undefined' && window.console && (window.console.firebug || window.console.exception && window.console.table) || // Is firefox >= v31?
-  // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-  typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || // Double check webkit in userAgent just in case we are in a worker
-  typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+function isHTTPS(protocol) {
+    return typeof protocol === 'string' ? /^https:?$/i.test(protocol) : false;
 }
-/**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-
-
-function formatArgs(args) {
-  args[0] = (this.useColors ? '%c' : '') + this.namespace + (this.useColors ? ' %c' : ' ') + args[0] + (this.useColors ? '%c ' : ' ') + '+' + module.exports.humanize(this.diff);
-
-  if (!this.useColors) {
-    return;
-  }
-
-  var c = 'color: ' + this.color;
-  args.splice(1, 0, c, 'color: inherit'); // The final "%c" is somewhat tricky, because there could be other
-  // arguments passed either before or after the %c, so we need to
-  // figure out the correct index to insert the CSS into
-
-  var index = 0;
-  var lastC = 0;
-  args[0].replace(/%[a-zA-Z%]/g, function (match) {
-    if (match === '%%') {
-      return;
-    }
-
-    index++;
-
-    if (match === '%c') {
-      // We only are interested in the *last* %c
-      // (the user may have provided their own)
-      lastC = index;
-    }
-  });
-  args.splice(lastC, 0, c);
-}
-/**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-
-
-function log() {
-  var _console;
-
-  // This hackery is required for IE8/9, where
-  // the `console.log` function doesn't have 'apply'
-  return (typeof console === "undefined" ? "undefined" : _typeof(console)) === 'object' && console.log && (_console = console).log.apply(_console, arguments);
-}
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-
-
-function save(namespaces) {
-  try {
-    if (namespaces) {
-      exports.storage.setItem('debug', namespaces);
-    } else {
-      exports.storage.removeItem('debug');
-    }
-  } catch (error) {// Swallow
-    // XXX (@Qix-) should we be logging these?
-  }
-}
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-
-function load() {
-  var r;
-
-  try {
-    r = exports.storage.getItem('debug');
-  } catch (error) {} // Swallow
-  // XXX (@Qix-) should we be logging these?
-  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
-
-
-  if (!r && typeof process !== 'undefined' && 'env' in process) {
-    r = process.env.DEBUG;
-  }
-
-  return r;
-}
-/**
- * Localstorage attempts to return the localstorage.
- *
- * This is necessary because safari throws
- * when a user disables cookies/localstorage
- * and you attempt to access it.
- *
- * @return {LocalStorage}
- * @api private
- */
-
-
-function localstorage() {
-  try {
-    // TVMLKit (Apple TV JS Runtime) does not have a window object, just localStorage in the global context
-    // The Browser also has localStorage in the global context.
-    return localStorage;
-  } catch (error) {// Swallow
-    // XXX (@Qix-) should we be logging these?
-  }
-}
-
-module.exports = __nccwpck_require__(6127)(exports);
-var formatters = module.exports.formatters;
-/**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-
-formatters.j = function (v) {
-  try {
-    return JSON.stringify(v);
-  } catch (error) {
-    return '[UnexpectedJSONParseError]: ' + error.message;
-  }
-};
-
-
-
-/***/ }),
-
-/***/ 6127:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-/**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- */
-function setup(env) {
-  createDebug.debug = createDebug;
-  createDebug.default = createDebug;
-  createDebug.coerce = coerce;
-  createDebug.disable = disable;
-  createDebug.enable = enable;
-  createDebug.enabled = enabled;
-  createDebug.humanize = __nccwpck_require__(1732);
-  Object.keys(env).forEach(function (key) {
-    createDebug[key] = env[key];
-  });
-  /**
-  * Active `debug` instances.
-  */
-
-  createDebug.instances = [];
-  /**
-  * The currently active debug mode names, and names to skip.
-  */
-
-  createDebug.names = [];
-  createDebug.skips = [];
-  /**
-  * Map of special "%n" handling functions, for the debug "format" argument.
-  *
-  * Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
-  */
-
-  createDebug.formatters = {};
-  /**
-  * Selects a color for a debug namespace
-  * @param {String} namespace The namespace string for the for the debug instance to be colored
-  * @return {Number|String} An ANSI color code for the given namespace
-  * @api private
-  */
-
-  function selectColor(namespace) {
-    var hash = 0;
-
-    for (var i = 0; i < namespace.length; i++) {
-      hash = (hash << 5) - hash + namespace.charCodeAt(i);
-      hash |= 0; // Convert to 32bit integer
-    }
-
-    return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
-  }
-
-  createDebug.selectColor = selectColor;
-  /**
-  * Create a debugger with the given `namespace`.
-  *
-  * @param {String} namespace
-  * @return {Function}
-  * @api public
-  */
-
-  function createDebug(namespace) {
-    var prevTime;
-
-    function debug() {
-      // Disabled?
-      if (!debug.enabled) {
-        return;
-      }
-
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      var self = debug; // Set `diff` timestamp
-
-      var curr = Number(new Date());
-      var ms = curr - (prevTime || curr);
-      self.diff = ms;
-      self.prev = prevTime;
-      self.curr = curr;
-      prevTime = curr;
-      args[0] = createDebug.coerce(args[0]);
-
-      if (typeof args[0] !== 'string') {
-        // Anything else let's inspect with %O
-        args.unshift('%O');
-      } // Apply any `formatters` transformations
-
-
-      var index = 0;
-      args[0] = args[0].replace(/%([a-zA-Z%])/g, function (match, format) {
-        // If we encounter an escaped % then don't increase the array index
-        if (match === '%%') {
-          return match;
+function omit(obj, ...keys) {
+    const ret = {};
+    let key;
+    for (key in obj) {
+        if (!keys.includes(key)) {
+            ret[key] = obj[key];
         }
+    }
+    return ret;
+}
+//# sourceMappingURL=agent.js.map
 
-        index++;
-        var formatter = createDebug.formatters[format];
+/***/ }),
 
-        if (typeof formatter === 'function') {
-          var val = args[index];
-          match = formatter.call(self, val); // Now we need to remove `args[index]` since it's inlined in the `format`
+/***/ 7219:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-          args.splice(index, 1);
-          index--;
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const agent_1 = __importDefault(__nccwpck_require__(5098));
+function createHttpsProxyAgent(opts) {
+    return new agent_1.default(opts);
+}
+(function (createHttpsProxyAgent) {
+    createHttpsProxyAgent.HttpsProxyAgent = agent_1.default;
+    createHttpsProxyAgent.prototype = agent_1.default.prototype;
+})(createHttpsProxyAgent || (createHttpsProxyAgent = {}));
+module.exports = createHttpsProxyAgent;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 595:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const debug_1 = __importDefault(__nccwpck_require__(8237));
+const debug = debug_1.default('https-proxy-agent:parse-proxy-response');
+function parseProxyResponse(socket) {
+    return new Promise((resolve, reject) => {
+        // we need to buffer any HTTP traffic that happens with the proxy before we get
+        // the CONNECT response, so that if the response is anything other than an "200"
+        // response code, then we can re-play the "data" events on the socket once the
+        // HTTP parser is hooked up...
+        let buffersLength = 0;
+        const buffers = [];
+        function read() {
+            const b = socket.read();
+            if (b)
+                ondata(b);
+            else
+                socket.once('readable', read);
         }
-
-        return match;
-      }); // Apply env-specific formatting (colors, etc.)
-
-      createDebug.formatArgs.call(self, args);
-      var logFn = self.log || createDebug.log;
-      logFn.apply(self, args);
-    }
-
-    debug.namespace = namespace;
-    debug.enabled = createDebug.enabled(namespace);
-    debug.useColors = createDebug.useColors();
-    debug.color = selectColor(namespace);
-    debug.destroy = destroy;
-    debug.extend = extend; // Debug.formatArgs = formatArgs;
-    // debug.rawLog = rawLog;
-    // env-specific initialization logic for debug instances
-
-    if (typeof createDebug.init === 'function') {
-      createDebug.init(debug);
-    }
-
-    createDebug.instances.push(debug);
-    return debug;
-  }
-
-  function destroy() {
-    var index = createDebug.instances.indexOf(this);
-
-    if (index !== -1) {
-      createDebug.instances.splice(index, 1);
-      return true;
-    }
-
-    return false;
-  }
-
-  function extend(namespace, delimiter) {
-    return createDebug(this.namespace + (typeof delimiter === 'undefined' ? ':' : delimiter) + namespace);
-  }
-  /**
-  * Enables a debug mode by namespaces. This can include modes
-  * separated by a colon and wildcards.
-  *
-  * @param {String} namespaces
-  * @api public
-  */
-
-
-  function enable(namespaces) {
-    createDebug.save(namespaces);
-    createDebug.names = [];
-    createDebug.skips = [];
-    var i;
-    var split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
-    var len = split.length;
-
-    for (i = 0; i < len; i++) {
-      if (!split[i]) {
-        // ignore empty strings
-        continue;
-      }
-
-      namespaces = split[i].replace(/\*/g, '.*?');
-
-      if (namespaces[0] === '-') {
-        createDebug.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-      } else {
-        createDebug.names.push(new RegExp('^' + namespaces + '$'));
-      }
-    }
-
-    for (i = 0; i < createDebug.instances.length; i++) {
-      var instance = createDebug.instances[i];
-      instance.enabled = createDebug.enabled(instance.namespace);
-    }
-  }
-  /**
-  * Disable debug output.
-  *
-  * @api public
-  */
-
-
-  function disable() {
-    createDebug.enable('');
-  }
-  /**
-  * Returns true if the given mode name is enabled, false otherwise.
-  *
-  * @param {String} name
-  * @return {Boolean}
-  * @api public
-  */
-
-
-  function enabled(name) {
-    if (name[name.length - 1] === '*') {
-      return true;
-    }
-
-    var i;
-    var len;
-
-    for (i = 0, len = createDebug.skips.length; i < len; i++) {
-      if (createDebug.skips[i].test(name)) {
-        return false;
-      }
-    }
-
-    for (i = 0, len = createDebug.names.length; i < len; i++) {
-      if (createDebug.names[i].test(name)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-  /**
-  * Coerce `val`.
-  *
-  * @param {Mixed} val
-  * @return {Mixed}
-  * @api private
-  */
-
-
-  function coerce(val) {
-    if (val instanceof Error) {
-      return val.stack || val.message;
-    }
-
-    return val;
-  }
-
-  createDebug.enable(createDebug.load());
-  return createDebug;
+        function cleanup() {
+            socket.removeListener('end', onend);
+            socket.removeListener('error', onerror);
+            socket.removeListener('close', onclose);
+            socket.removeListener('readable', read);
+        }
+        function onclose(err) {
+            debug('onclose had error %o', err);
+        }
+        function onend() {
+            debug('onend');
+        }
+        function onerror(err) {
+            cleanup();
+            debug('onerror %o', err);
+            reject(err);
+        }
+        function ondata(b) {
+            buffers.push(b);
+            buffersLength += b.length;
+            const buffered = Buffer.concat(buffers, buffersLength);
+            const endOfHeaders = buffered.indexOf('\r\n\r\n');
+            if (endOfHeaders === -1) {
+                // keep buffering
+                debug('have not received end of HTTP headers yet...');
+                read();
+                return;
+            }
+            const firstLine = buffered.toString('ascii', 0, buffered.indexOf('\r\n'));
+            const statusCode = +firstLine.split(' ')[1];
+            debug('got proxy server response: %o', firstLine);
+            resolve({
+                statusCode,
+                buffered
+            });
+        }
+        socket.on('error', onerror);
+        socket.on('close', onclose);
+        socket.on('end', onend);
+        read();
+    });
 }
-
-module.exports = setup;
-
-
-
-/***/ }),
-
-/***/ 6785:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-/**
- * Detect Electron renderer / nwjs process, which is node, but we should
- * treat as a browser.
- */
-if (typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs) {
-  module.exports = __nccwpck_require__(814);
-} else {
-  module.exports = __nccwpck_require__(9559);
-}
-
-
-
-/***/ }),
-
-/***/ 9559:
-/***/ ((module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-/**
- * Module dependencies.
- */
-var tty = __nccwpck_require__(3867);
-
-var util = __nccwpck_require__(1669);
-/**
- * This is the Node.js implementation of `debug()`.
- */
-
-
-exports.init = init;
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-/**
- * Colors.
- */
-
-exports.colors = [6, 2, 3, 4, 5, 1];
-
-try {
-  // Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
-  // eslint-disable-next-line import/no-extraneous-dependencies
-  var supportsColor = __nccwpck_require__(9318);
-
-  if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
-    exports.colors = [20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62, 63, 68, 69, 74, 75, 76, 77, 78, 79, 80, 81, 92, 93, 98, 99, 112, 113, 128, 129, 134, 135, 148, 149, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 178, 179, 184, 185, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 214, 215, 220, 221];
-  }
-} catch (error) {} // Swallow - we only care if `supports-color` is available; it doesn't have to be.
-
-/**
- * Build up the default `inspectOpts` object from the environment variables.
- *
- *   $ DEBUG_COLORS=no DEBUG_DEPTH=10 DEBUG_SHOW_HIDDEN=enabled node script.js
- */
-
-
-exports.inspectOpts = Object.keys(process.env).filter(function (key) {
-  return /^debug_/i.test(key);
-}).reduce(function (obj, key) {
-  // Camel-case
-  var prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, function (_, k) {
-    return k.toUpperCase();
-  }); // Coerce string value into JS value
-
-  var val = process.env[key];
-
-  if (/^(yes|on|true|enabled)$/i.test(val)) {
-    val = true;
-  } else if (/^(no|off|false|disabled)$/i.test(val)) {
-    val = false;
-  } else if (val === 'null') {
-    val = null;
-  } else {
-    val = Number(val);
-  }
-
-  obj[prop] = val;
-  return obj;
-}, {});
-/**
- * Is stdout a TTY? Colored output is enabled when `true`.
- */
-
-function useColors() {
-  return 'colors' in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(process.stderr.fd);
-}
-/**
- * Adds ANSI color escape codes if enabled.
- *
- * @api public
- */
-
-
-function formatArgs(args) {
-  var name = this.namespace,
-      useColors = this.useColors;
-
-  if (useColors) {
-    var c = this.color;
-    var colorCode = "\x1B[3" + (c < 8 ? c : '8;5;' + c);
-    var prefix = "  ".concat(colorCode, ";1m").concat(name, " \x1B[0m");
-    args[0] = prefix + args[0].split('\n').join('\n' + prefix);
-    args.push(colorCode + 'm+' + module.exports.humanize(this.diff) + "\x1B[0m");
-  } else {
-    args[0] = getDate() + name + ' ' + args[0];
-  }
-}
-
-function getDate() {
-  if (exports.inspectOpts.hideDate) {
-    return '';
-  }
-
-  return new Date().toISOString() + ' ';
-}
-/**
- * Invokes `util.format()` with the specified arguments and writes to stderr.
- */
-
-
-function log() {
-  return process.stderr.write(util.format.apply(util, arguments) + '\n');
-}
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-
-
-function save(namespaces) {
-  if (namespaces) {
-    process.env.DEBUG = namespaces;
-  } else {
-    // If you set a process.env field to null or undefined, it gets cast to the
-    // string 'null' or 'undefined'. Just delete instead.
-    delete process.env.DEBUG;
-  }
-}
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-
-function load() {
-  return process.env.DEBUG;
-}
-/**
- * Init logic for `debug` instances.
- *
- * Create a new `inspectOpts` object in case `useColors` is set
- * differently for a particular `debug` instance.
- */
-
-
-function init(debug) {
-  debug.inspectOpts = {};
-  var keys = Object.keys(exports.inspectOpts);
-
-  for (var i = 0; i < keys.length; i++) {
-    debug.inspectOpts[keys[i]] = exports.inspectOpts[keys[i]];
-  }
-}
-
-module.exports = __nccwpck_require__(6127)(exports);
-var formatters = module.exports.formatters;
-/**
- * Map %o to `util.inspect()`, all on a single line.
- */
-
-formatters.o = function (v) {
-  this.inspectOpts.colors = this.useColors;
-  return util.inspect(v, this.inspectOpts)
-    .split('\n')
-    .map(function (str) { return str.trim(); })
-    .join(' ');
-};
-/**
- * Map %O to `util.inspect()`, allowing multiple lines if needed.
- */
-
-
-formatters.O = function (v) {
-  this.inspectOpts.colors = this.useColors;
-  return util.inspect(v, this.inspectOpts);
-};
-
-
-
-/***/ }),
-
-/***/ 1732:
-/***/ ((module) => {
-
-/**
- * Helpers.
- */
-
-var s = 1000;
-var m = s * 60;
-var h = m * 60;
-var d = h * 24;
-var w = d * 7;
-var y = d * 365.25;
-
-/**
- * Parse or format the given `val`.
- *
- * Options:
- *
- *  - `long` verbose formatting [false]
- *
- * @param {String|Number} val
- * @param {Object} [options]
- * @throws {Error} throw an error if val is not a non-empty string or a number
- * @return {String|Number}
- * @api public
- */
-
-module.exports = function (val, options) {
-  options = options || {};
-  var type = typeof val;
-  if (type === 'string' && val.length > 0) {
-    return parse(val);
-  } else if (type === 'number' && isFinite(val)) {
-    return options.long ? fmtLong(val) : fmtShort(val);
-  }
-  throw new Error(
-    'val is not a non-empty string or a valid number. val=' +
-      JSON.stringify(val)
-  );
-};
-
-/**
- * Parse the given `str` and return milliseconds.
- *
- * @param {String} str
- * @return {Number}
- * @api private
- */
-
-function parse(str) {
-  str = String(str);
-  if (str.length > 100) {
-    return;
-  }
-  var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
-    str
-  );
-  if (!match) {
-    return;
-  }
-  var n = parseFloat(match[1]);
-  var type = (match[2] || 'ms').toLowerCase();
-  switch (type) {
-    case 'years':
-    case 'year':
-    case 'yrs':
-    case 'yr':
-    case 'y':
-      return n * y;
-    case 'weeks':
-    case 'week':
-    case 'w':
-      return n * w;
-    case 'days':
-    case 'day':
-    case 'd':
-      return n * d;
-    case 'hours':
-    case 'hour':
-    case 'hrs':
-    case 'hr':
-    case 'h':
-      return n * h;
-    case 'minutes':
-    case 'minute':
-    case 'mins':
-    case 'min':
-    case 'm':
-      return n * m;
-    case 'seconds':
-    case 'second':
-    case 'secs':
-    case 'sec':
-    case 's':
-      return n * s;
-    case 'milliseconds':
-    case 'millisecond':
-    case 'msecs':
-    case 'msec':
-    case 'ms':
-      return n;
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Short format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function fmtShort(ms) {
-  var msAbs = Math.abs(ms);
-  if (msAbs >= d) {
-    return Math.round(ms / d) + 'd';
-  }
-  if (msAbs >= h) {
-    return Math.round(ms / h) + 'h';
-  }
-  if (msAbs >= m) {
-    return Math.round(ms / m) + 'm';
-  }
-  if (msAbs >= s) {
-    return Math.round(ms / s) + 's';
-  }
-  return ms + 'ms';
-}
-
-/**
- * Long format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function fmtLong(ms) {
-  var msAbs = Math.abs(ms);
-  if (msAbs >= d) {
-    return plural(ms, msAbs, d, 'day');
-  }
-  if (msAbs >= h) {
-    return plural(ms, msAbs, h, 'hour');
-  }
-  if (msAbs >= m) {
-    return plural(ms, msAbs, m, 'minute');
-  }
-  if (msAbs >= s) {
-    return plural(ms, msAbs, s, 'second');
-  }
-  return ms + ' ms';
-}
-
-/**
- * Pluralization helper.
- */
-
-function plural(ms, msAbs, n, name) {
-  var isPlural = msAbs >= n * 1.5;
-  return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
-}
-
+exports.default = parseProxyResponse;
+//# sourceMappingURL=parse-proxy-response.js.map
 
 /***/ }),
 
@@ -8522,6 +10317,175 @@ module.exports = function (obj) {
 
 	return ret;
 };
+
+
+/***/ }),
+
+/***/ 900:
+/***/ ((module) => {
+
+/**
+ * Helpers.
+ */
+
+var s = 1000;
+var m = s * 60;
+var h = m * 60;
+var d = h * 24;
+var w = d * 7;
+var y = d * 365.25;
+
+/**
+ * Parse or format the given `val`.
+ *
+ * Options:
+ *
+ *  - `long` verbose formatting [false]
+ *
+ * @param {String|Number} val
+ * @param {Object} [options]
+ * @throws {Error} throw an error if val is not a non-empty string or a number
+ * @return {String|Number}
+ * @api public
+ */
+
+module.exports = function(val, options) {
+  options = options || {};
+  var type = typeof val;
+  if (type === 'string' && val.length > 0) {
+    return parse(val);
+  } else if (type === 'number' && isFinite(val)) {
+    return options.long ? fmtLong(val) : fmtShort(val);
+  }
+  throw new Error(
+    'val is not a non-empty string or a valid number. val=' +
+      JSON.stringify(val)
+  );
+};
+
+/**
+ * Parse the given `str` and return milliseconds.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */
+
+function parse(str) {
+  str = String(str);
+  if (str.length > 100) {
+    return;
+  }
+  var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
+    str
+  );
+  if (!match) {
+    return;
+  }
+  var n = parseFloat(match[1]);
+  var type = (match[2] || 'ms').toLowerCase();
+  switch (type) {
+    case 'years':
+    case 'year':
+    case 'yrs':
+    case 'yr':
+    case 'y':
+      return n * y;
+    case 'weeks':
+    case 'week':
+    case 'w':
+      return n * w;
+    case 'days':
+    case 'day':
+    case 'd':
+      return n * d;
+    case 'hours':
+    case 'hour':
+    case 'hrs':
+    case 'hr':
+    case 'h':
+      return n * h;
+    case 'minutes':
+    case 'minute':
+    case 'mins':
+    case 'min':
+    case 'm':
+      return n * m;
+    case 'seconds':
+    case 'second':
+    case 'secs':
+    case 'sec':
+    case 's':
+      return n * s;
+    case 'milliseconds':
+    case 'millisecond':
+    case 'msecs':
+    case 'msec':
+    case 'ms':
+      return n;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Short format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtShort(ms) {
+  var msAbs = Math.abs(ms);
+  if (msAbs >= d) {
+    return Math.round(ms / d) + 'd';
+  }
+  if (msAbs >= h) {
+    return Math.round(ms / h) + 'h';
+  }
+  if (msAbs >= m) {
+    return Math.round(ms / m) + 'm';
+  }
+  if (msAbs >= s) {
+    return Math.round(ms / s) + 's';
+  }
+  return ms + 'ms';
+}
+
+/**
+ * Long format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtLong(ms) {
+  var msAbs = Math.abs(ms);
+  if (msAbs >= d) {
+    return plural(ms, msAbs, d, 'day');
+  }
+  if (msAbs >= h) {
+    return plural(ms, msAbs, h, 'hour');
+  }
+  if (msAbs >= m) {
+    return plural(ms, msAbs, m, 'minute');
+  }
+  if (msAbs >= s) {
+    return plural(ms, msAbs, s, 'second');
+  }
+  return ms + ' ms';
+}
+
+/**
+ * Pluralization helper.
+ */
+
+function plural(ms, msAbs, n, name) {
+  var isPlural = msAbs >= n * 1.5;
+  return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
+}
 
 
 /***/ }),
@@ -9579,7 +11543,7 @@ var slice = [].slice;
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"name\":\"cloudflare\",\"version\":\"2.7.0\",\"description\":\"CloudFlare API client\",\"author\":\"Terin Stock <terinjokes@gmail.com>\",\"bugs\":{\"url\":\"https://github.com/cloudflare/node-cloudflare/issues\"},\"dependencies\":{\"autocreate\":\"^1.1.0\",\"es-class\":\"^2.1.1\",\"got\":\"^6.3.0\",\"https-proxy-agent\":\"^2.1.1\",\"object-assign\":\"^4.1.0\",\"should-proxy\":\"^1.0.4\",\"url-pattern\":\"^1.0.3\"},\"devDependencies\":{\"coveralls\":\"^2.13.1\",\"eslint\":\"^4.15.0\",\"eslint-config-es\":\"^0.8.12\",\"eslint-config-prettier\":\"^2.9.0\",\"eslint-plugin-eslint-comments\":\"^2.0.1\",\"eslint-plugin-mocha\":\"^4.11.0\",\"eslint-plugin-node\":\"^5.2.1\",\"eslint-plugin-notice\":\"^0.5.6\",\"eslint-plugin-prettier\":\"^2.4.0\",\"eslint-plugin-promise\":\"^3.6.0\",\"eslint-plugin-security\":\"^1.4.0\",\"intelli-espower-loader\":\"^1.0.1\",\"mocha\":\"^3.4.2\",\"nyc\":\"^10.3.2\",\"power-assert\":\"^1.4.4\",\"prettier\":\"^1.9.2\",\"testdouble\":\"^3.1.1\"},\"homepage\":\"https://github.com/cloudflare/node-cloudflare\",\"keywords\":[\"cloudflare\",\"api\"],\"license\":\"MIT\",\"main\":\"index.js\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/cloudflare/node-cloudflare.git\"},\"scripts\":{\"lint\":\"eslint '{index,{lib,test}/**/*}.js'\",\"test\":\"nyc --reporter=lcov --reporter=text-summary mocha --require intelli-espower-loader --recursive test\",\"coverage\":\"cat ./coverage/lcov.info | coveralls\"},\"files\":[\"index.js\",\"lib\"],\"xo\":{\"space\":true,\"rules\":{\"unicorn/filename-case\":0}},\"publishConfig\":{\"tag\":\"next\"}}");
+module.exports = JSON.parse('{"name":"cloudflare","version":"2.8.0","description":"CloudFlare API client","author":"Terin Stock <terinjokes@gmail.com>","bugs":{"url":"https://github.com/cloudflare/node-cloudflare/issues"},"dependencies":{"autocreate":"^1.1.0","es-class":"^2.1.1","got":"^6.3.0","https-proxy-agent":"^5.0.0","object-assign":"^4.1.0","should-proxy":"^1.0.4","url-pattern":"^1.0.3"},"devDependencies":{"coveralls":"^2.13.1","eslint":"^4.15.0","eslint-config-es":"^0.8.12","eslint-config-prettier":"^2.9.0","eslint-plugin-eslint-comments":"^2.0.1","eslint-plugin-mocha":"^4.11.0","eslint-plugin-node":"^5.2.1","eslint-plugin-notice":"^0.5.6","eslint-plugin-prettier":"^2.4.0","eslint-plugin-promise":"^3.6.0","eslint-plugin-security":"^1.4.0","intelli-espower-loader":"^1.0.1","mocha":"^3.4.2","nyc":"^10.3.2","power-assert":"^1.4.4","prettier":"^1.9.2","testdouble":"^3.1.1"},"homepage":"https://github.com/cloudflare/node-cloudflare","keywords":["cloudflare","api"],"license":"MIT","main":"index.js","repository":{"type":"git","url":"git+https://github.com/cloudflare/node-cloudflare.git"},"scripts":{"lint":"eslint \'{index,{lib,test}/**/*}.js\'","test":"nyc --reporter=lcov --reporter=text-summary mocha --require intelli-espower-loader --recursive test","coverage":"cat ./coverage/lcov.info | coveralls"},"files":["index.js","lib"],"xo":{"space":true,"rules":{"unicorn/filename-case":0}},"publishConfig":{"tag":"next"}}');
 
 /***/ }),
 
@@ -9587,7 +11551,7 @@ module.exports = JSON.parse("{\"name\":\"cloudflare\",\"version\":\"2.7.0\",\"de
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"name\":\"got\",\"version\":\"6.7.1\",\"description\":\"Simplified HTTP requests\",\"license\":\"MIT\",\"repository\":\"sindresorhus/got\",\"maintainers\":[{\"name\":\"Sindre Sorhus\",\"email\":\"sindresorhus@gmail.com\",\"url\":\"sindresorhus.com\"},{\"name\":\"Vsevolod Strukchinsky\",\"email\":\"floatdrop@gmail.com\",\"url\":\"github.com/floatdrop\"}],\"engines\":{\"node\":\">=4\"},\"browser\":{\"unzip-response\":false},\"scripts\":{\"test\":\"xo && nyc ava\",\"coveralls\":\"nyc report --reporter=text-lcov | coveralls\"},\"files\":[\"index.js\"],\"keywords\":[\"http\",\"https\",\"get\",\"got\",\"url\",\"uri\",\"request\",\"util\",\"utility\",\"simple\",\"curl\",\"wget\",\"fetch\"],\"dependencies\":{\"create-error-class\":\"^3.0.0\",\"duplexer3\":\"^0.1.4\",\"get-stream\":\"^3.0.0\",\"is-redirect\":\"^1.0.0\",\"is-retry-allowed\":\"^1.0.0\",\"is-stream\":\"^1.0.0\",\"lowercase-keys\":\"^1.0.0\",\"safe-buffer\":\"^5.0.1\",\"timed-out\":\"^4.0.0\",\"unzip-response\":\"^2.0.1\",\"url-parse-lax\":\"^1.0.0\"},\"devDependencies\":{\"ava\":\"^0.17.0\",\"coveralls\":\"^2.11.4\",\"form-data\":\"^2.1.1\",\"get-port\":\"^2.0.0\",\"into-stream\":\"^3.0.0\",\"nyc\":\"^10.0.0\",\"pem\":\"^1.4.4\",\"pify\":\"^2.3.0\",\"tempfile\":\"^1.1.1\",\"xo\":\"*\"},\"xo\":{\"esnext\":true},\"ava\":{\"concurrency\":4}}");
+module.exports = JSON.parse('{"name":"got","version":"6.7.1","description":"Simplified HTTP requests","license":"MIT","repository":"sindresorhus/got","maintainers":[{"name":"Sindre Sorhus","email":"sindresorhus@gmail.com","url":"sindresorhus.com"},{"name":"Vsevolod Strukchinsky","email":"floatdrop@gmail.com","url":"github.com/floatdrop"}],"engines":{"node":">=4"},"browser":{"unzip-response":false},"scripts":{"test":"xo && nyc ava","coveralls":"nyc report --reporter=text-lcov | coveralls"},"files":["index.js"],"keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch"],"dependencies":{"create-error-class":"^3.0.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","is-redirect":"^1.0.0","is-retry-allowed":"^1.0.0","is-stream":"^1.0.0","lowercase-keys":"^1.0.0","safe-buffer":"^5.0.1","timed-out":"^4.0.0","unzip-response":"^2.0.1","url-parse-lax":"^1.0.0"},"devDependencies":{"ava":"^0.17.0","coveralls":"^2.11.4","form-data":"^2.1.1","get-port":"^2.0.0","into-stream":"^3.0.0","nyc":"^10.0.0","pem":"^1.4.4","pify":"^2.3.0","tempfile":"^1.1.1","xo":"*"},"xo":{"esnext":true},"ava":{"concurrency":4}}');
 
 /***/ }),
 
@@ -9595,7 +11559,7 @@ module.exports = JSON.parse("{\"name\":\"got\",\"version\":\"6.7.1\",\"descripti
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("assert");;
+module.exports = require("assert");
 
 /***/ }),
 
@@ -9603,7 +11567,7 @@ module.exports = require("assert");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("buffer");;
+module.exports = require("buffer");
 
 /***/ }),
 
@@ -9611,7 +11575,7 @@ module.exports = require("buffer");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("events");;
+module.exports = require("events");
 
 /***/ }),
 
@@ -9619,7 +11583,7 @@ module.exports = require("events");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("fs");;
+module.exports = require("fs");
 
 /***/ }),
 
@@ -9627,7 +11591,7 @@ module.exports = require("fs");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("http");;
+module.exports = require("http");
 
 /***/ }),
 
@@ -9635,7 +11599,7 @@ module.exports = require("http");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("https");;
+module.exports = require("https");
 
 /***/ }),
 
@@ -9643,7 +11607,7 @@ module.exports = require("https");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("net");;
+module.exports = require("net");
 
 /***/ }),
 
@@ -9651,7 +11615,7 @@ module.exports = require("net");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("os");;
+module.exports = require("os");
 
 /***/ }),
 
@@ -9659,7 +11623,7 @@ module.exports = require("os");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("path");;
+module.exports = require("path");
 
 /***/ }),
 
@@ -9667,7 +11631,7 @@ module.exports = require("path");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("process");;
+module.exports = require("process");
 
 /***/ }),
 
@@ -9675,7 +11639,7 @@ module.exports = require("process");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("querystring");;
+module.exports = require("querystring");
 
 /***/ }),
 
@@ -9683,7 +11647,7 @@ module.exports = require("querystring");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("stream");;
+module.exports = require("stream");
 
 /***/ }),
 
@@ -9691,7 +11655,7 @@ module.exports = require("stream");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("tls");;
+module.exports = require("tls");
 
 /***/ }),
 
@@ -9699,7 +11663,7 @@ module.exports = require("tls");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("tty");;
+module.exports = require("tty");
 
 /***/ }),
 
@@ -9707,7 +11671,7 @@ module.exports = require("tty");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("url");;
+module.exports = require("url");
 
 /***/ }),
 
@@ -9715,7 +11679,7 @@ module.exports = require("url");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("util");;
+module.exports = require("util");
 
 /***/ }),
 
@@ -9723,7 +11687,7 @@ module.exports = require("util");;
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("zlib");;
+module.exports = require("zlib");
 
 /***/ })
 
@@ -9735,8 +11699,9 @@ module.exports = require("zlib");;
 /******/ 	// The require function
 /******/ 	function __nccwpck_require__(moduleId) {
 /******/ 		// Check if module is in cache
-/******/ 		if(__webpack_module_cache__[moduleId]) {
-/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = __webpack_module_cache__[moduleId] = {
@@ -9761,11 +11726,16 @@ module.exports = require("zlib");;
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	__nccwpck_require__.ab = __dirname + "/";/************************************************************************/
-/******/ 	// module exports must be returned from runtime so entry inlining is disabled
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
+/******/ 	
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(4063);
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(4063);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map

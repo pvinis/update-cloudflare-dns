@@ -13,7 +13,6 @@
 		"build": "tsc",
 		"bump": "npm run package; git add dist; npm run version",
 		"dry": "npm run build; DRY_RUN=true node .build/main.js",
-		"lint": "eslint --fix src/*",
 		"package": "npm run build; ncc build --source-map --license licenses.txt",
 		"postinstall": "patch-package",
 		"start": "npm run build; node .build/main.js",
