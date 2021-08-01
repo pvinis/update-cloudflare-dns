@@ -1,6 +1,6 @@
 {
 	"name": "update-cloudflare-dns",
-	"version": "0.4.1",
+	"version": "0.5.0",
 	"license": "MIT",
 	"repository": "https://github.com/pvinis/update-cloudflare-dns.git",
 	"author": "Pavlos Vinieratos <pvinis@gmail.com>",
