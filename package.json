@@ -29,7 +29,7 @@
 	},
 	"devDependencies": {
 		"@decadejs/eslint-config-base": "1.0.5",
-		"@types/cloudflare": "2.7.5",
+		"@types/cloudflare": "2.7.14",
 		"@types/hjson": "2.4.3",
 		"@types/jest": "26.0.24",
 		"@types/node": "16.4.8",
